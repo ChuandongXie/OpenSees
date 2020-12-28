@@ -361,6 +361,7 @@
     <ClCompile Include="..\..\..\SRC\material\uniaxial\Steel2.cpp" />
     <ClCompile Include="..\..\..\SRC\material\uniaxial\Steel4.cpp" />
     <ClCompile Include="..\..\..\SRC\material\uniaxial\SteelBRB.cpp" />
+    <ClCompile Include="..\..\..\SRC\material\uniaxial\SteelBuckling.cpp" />
     <ClCompile Include="..\..\..\SRC\material\uniaxial\SteelECThermal.cpp" />
     <ClCompile Include="..\..\..\SRC\material\uniaxial\SteelMP.cpp" />
     <ClCompile Include="..\..\..\SRC\material\uniaxial\SteelMPF.cpp" />
@@ -775,6 +776,7 @@
     <ClInclude Include="..\..\..\SRC\material\uniaxial\Steel2.h" />
     <ClInclude Include="..\..\..\SRC\material\uniaxial\Steel4.h" />
     <ClInclude Include="..\..\..\SRC\material\uniaxial\SteelBRB.h" />
+    <ClInclude Include="..\..\..\SRC\material\uniaxial\SteelBuckling.h" />
     <ClInclude Include="..\..\..\SRC\material\uniaxial\SteelECThermal.h" />
     <ClInclude Include="..\..\..\SRC\material\uniaxial\SteelMP.h" />
     <ClInclude Include="..\..\..\SRC\material\uniaxial\SteelMPF.h" />

@@ -79,6 +79,7 @@ void* OPS_Steel02();
 void* OPS_Steel03();
 void* OPS_Concrete01();
 void* OPS_Steel4();
+void* OPS_SteelBuckling();
 void* OPS_HystereticMaterial();
 void* OPS_ReinforcingSteel();
 void* OPS_Dodd_Restrepo();

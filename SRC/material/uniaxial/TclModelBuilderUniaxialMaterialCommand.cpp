@@ -169,6 +169,7 @@ extern void *OPS_ElasticPowerFunc(void);
 extern void *OPS_UVCuniaxial(void);
 extern void *OPS_DegradingPinchedBW(void);
 extern void *OPS_SLModel(void);
+extern void *OPS_SteelBuckling(void);       // C-T Hsieh
 
 //extern int TclCommand_ConfinedConcrete02(ClientData clientData, Tcl_Interp *interp, int argc, 
 //					 TCL_Char **argv, TclModelBuilder *theTclBuilder);
@@ -332,6 +333,14 @@ TclModelBuilderUniaxialMaterialCommand (ClientData clientData, Tcl_Interp *inter
 	theMaterial = (UniaxialMaterial *)theMat;
       else 
 	return TCL_ERROR;
+
+    }
+    else if (strcmp(argv[1], "SteelBuckling") == 0) {
+        void* theMat = OPS_SteelBuckling();
+        if (theMat != 0)
+            theMaterial = (UniaxialMaterial*)theMat;
+        else
+            return TCL_ERROR;
 
     } else if (strcmp(argv[1],"UVCuniaxial") == 0) {
       void *theMat = OPS_UVCuniaxial();
