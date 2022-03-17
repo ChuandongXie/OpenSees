@@ -79,3 +79,6 @@ SRC/interpreter/pythonInterpreter
 SRC/interpreter/tclInterpreter
 SRC/interpreter/openseespy
 SRC/interpreter/openseestcl
+*.tcl
+Win64/bin/plotSteelBuckling.m
+Win64/bin/SteelBuckling
