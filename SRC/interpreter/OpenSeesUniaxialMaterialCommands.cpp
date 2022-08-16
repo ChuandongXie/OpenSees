@@ -94,6 +94,7 @@ void* OPS_SteelFractureDI();
 void* OPS_Steel02Fatigue();
 void* OPS_Steel03();
 void* OPS_SPSW02();
+void* OPS_SPSW03();
 void* OPS_Concrete01();
 void* OPS_Steel4();
 void* OPS_HystereticMaterial();
@@ -276,6 +277,8 @@ static int setUpUniaxialMaterials(void) {
       std::make_pair("Steel03", &OPS_Steel03));
   uniaxialMaterialsMap.insert(
       std::make_pair("SPSW02", &OPS_SPSW02));
+  uniaxialMaterialsMap.insert(
+      std::make_pair("SPSW03", &OPS_SPSW03));
   uniaxialMaterialsMap.insert(
       std::make_pair("Concrete01", &OPS_Concrete01));
   uniaxialMaterialsMap.insert(

@@ -86,6 +86,7 @@ extern "C" int OPS_ResetInputNoBuilder(ClientData clientData, Tcl_Interp * inter
 #include <UniaxialJ2Plasticity.h>   // Quan 
 
 extern void *OPS_SPSW02(void);		// SAJalali
+extern void *OPS_SPSW03(void); // Chuandong Xie
 extern void *OPS_TDConcreteEXP(void); // ntosic
 extern void *OPS_TDConcrete(void); // ntosic
 extern void *OPS_TDConcreteMC10(void); //ntosic
@@ -2939,6 +2940,13 @@ TclModelBuilderUniaxialMaterialCommand (ClientData clientData, Tcl_Interp *inter
     }
     if (strcmp(argv[1], "Multiplier") == 0) {
         void* theMat = OPS_MultiplierMaterial();
+        if (theMat != 0)
+            theMaterial = (UniaxialMaterial*)theMat;
+        else
+            return TCL_ERROR;
+    }
+    if (strcmp(argv[1], "SPSW03") == 0) { // Chuandong Xie
+        void* theMat = OPS_SPSW03();
         if (theMat != 0)
             theMaterial = (UniaxialMaterial*)theMat;
         else
