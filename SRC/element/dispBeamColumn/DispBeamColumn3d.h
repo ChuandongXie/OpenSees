@@ -107,11 +107,11 @@ class DispBeamColumn3d : public Element
   protected:
     
   private:
-    const Matrix &getInitialBasicStiff(void);
+    void getBasicStiff(Matrix &kb, int initial = 0);  
 
 	int numSections;
 	SectionForceDeformation** theSections; // pointer to the ND material objects
-	CrdTransf* crdTransf;        // pointer to coordinate tranformation object 
+	CrdTransf* crdTransf;        // pointer to coordinate transformation object 
 	BeamIntegration* beamInt;
 
     ID connectedExternalNodes; // Tags of quad nodes
