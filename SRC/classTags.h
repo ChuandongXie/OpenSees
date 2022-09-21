@@ -255,6 +255,7 @@
 #define MAT_TAG_FedeasSteel1      1009
 #define MAT_TAG_FedeasSteel2      1010
 #define MAT_TAG_PlasticDamage	  1011
+#define MAT_TAG_Pinching4M		  1100 // C Xie
 
 #define MAT_TAG_LimitState	   1972
 #define MAT_TAG_Elastic2Material   1973

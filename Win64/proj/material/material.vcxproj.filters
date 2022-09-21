@@ -1448,6 +1448,9 @@
     <ClCompile Include="..\..\..\SRC\material\uniaxial\FRCC.cpp">
       <Filter>uniaxial</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\SRC\material\uniaxial\Pinching4M.cpp">
+      <Filter>uniaxial</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\SRC\material\uniaxial\AxialSp.h">
@@ -2677,6 +2680,9 @@
     </ClInclude>
     <ClInclude Include="..\..\..\SRC\material\nD\VonPapaDamage.h">
       <Filter>nD</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\SRC\material\uniaxial\Pinching4M.h">
+      <Filter>uniaxial</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

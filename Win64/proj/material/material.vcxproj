@@ -355,6 +355,7 @@
     <ClCompile Include="..\..\..\SRC\material\uniaxial\fedeas\PD1.c" />
     <ClCompile Include="..\..\..\SRC\material\uniaxial\ParallelMaterial.cpp" />
     <ClCompile Include="..\..\..\SRC\material\uniaxial\PathIndependentMaterial.cpp" />
+    <ClCompile Include="..\..\..\SRC\material\uniaxial\Pinching4M.cpp" />
     <ClCompile Include="..\..\..\SRC\material\uniaxial\Pinching4Material.cpp" />
     <ClCompile Include="..\..\..\SRC\material\uniaxial\limitState\PinchingLimitStateMaterial.cpp" />
     <ClCompile Include="..\..\..\SRC\material\uniaxial\fedeas\PlasticDamageMaterial.cpp" />
@@ -786,6 +787,7 @@
     <ClInclude Include="..\..\..\SRC\material\uniaxial\OriginCentered.h" />
     <ClInclude Include="..\..\..\SRC\material\uniaxial\ParallelMaterial.h" />
     <ClInclude Include="..\..\..\SRC\material\uniaxial\PathIndependentMaterial.h" />
+    <ClInclude Include="..\..\..\SRC\material\uniaxial\Pinching4M.h" />
     <ClInclude Include="..\..\..\SRC\material\uniaxial\Pinching4Material.h" />
     <ClInclude Include="..\..\..\SRC\material\uniaxial\limitState\PinchingLimitStateMaterial.h" />
     <ClInclude Include="..\..\..\SRC\material\uniaxial\fedeas\PlasticDamageMaterial.h" />
