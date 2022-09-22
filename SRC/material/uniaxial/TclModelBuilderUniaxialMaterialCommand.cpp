@@ -174,6 +174,7 @@ extern void *OPS_AxialSp(void);
 extern void *OPS_AxialSpHD(void);
 extern void *OPS_KikuchiAikenHDR(void);
 extern void *OPS_KikuchiAikenLRB(void);
+extern void* OPS_Pinching4M(void);
 
 extern UniaxialMaterial *
 Tcl_AddLimitStateMaterial(ClientData clientData, Tcl_Interp *interp, int argc, TCL_Char **arg);
@@ -1103,6 +1104,14 @@ TclModelBuilderUniaxialMaterialCommand (ClientData clientData, Tcl_Interp *inter
         theMaterial = (UniaxialMaterial*)theMat;
       else
         return TCL_ERROR;
+    }
+    if (strcmp(argv[1], "Pinching4M") == 0) {
+        void* theMat = OPS_Pinching4M();
+        if (theMat != 0)
+            theMaterial = (UniaxialMaterial*)theMat;
+        else
+            return TCL_ERROR;
+
     }
     if (strcmp(argv[1],"Pinching4") == 0) {
 		if (argc != 42 && argc != 31 ) {

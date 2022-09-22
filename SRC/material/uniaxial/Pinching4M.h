@@ -140,7 +140,8 @@ private:
 	double CmaxStrainDmnd;
 	double Cenergy;
 	double CgammaK;
-	double CGammaF;
+	double CgammaD;
+	double CgammaF;
 	double gammaKUsed;
 	double gammaFUsed;
 
@@ -176,7 +177,7 @@ private:
 	void getstate(double, double);
 	double posEnvlpStress(double);
 	double posEnvlpTangent(double);
-	double neEnvlpStress(double);
+	double negEnvlpStress(double);
 	double negEnvlpTangent(double);
 	void getState3(Vector&, Vector&, double);
 	void getState4(Vector&, Vector&, double);

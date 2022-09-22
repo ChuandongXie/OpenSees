@@ -140,6 +140,7 @@ void* OPS_InitStressMaterial();
 void* OPS_PathIndependentMaterial();
 void* OPS_MultiplierMaterial();
 void* OPS_Pinching4Material();
+void* OPS_Pinching4M();
 void* OPS_ECC01();
 void* OPS_SelfCenteringMaterial();
 void* OPS_ASD_SMA_3K();
@@ -401,6 +402,8 @@ static int setUpUniaxialMaterials(void) {
       std::make_pair("Multiplier", &OPS_MultiplierMaterial));
   uniaxialMaterialsMap.insert(
       std::make_pair("Pinching4", &OPS_Pinching4Material));
+  uniaxialMaterialsMap.insert(
+      std::make_pair("Pinching4M", &OPS_Pinching4M));
   uniaxialMaterialsMap.insert(
       std::make_pair("ECC01", &OPS_ECC01));
   uniaxialMaterialsMap.insert(std::make_pair(
