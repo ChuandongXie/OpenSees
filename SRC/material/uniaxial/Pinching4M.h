@@ -105,8 +105,8 @@ private:
 	double stressyp; double stressyn; // Yielding stress
 	Vector envlpPosStress; Vector envlpPosStrain;
 	Vector envlpNegStress; Vector envlpNegStrain;
-	Vector envlpPosStressUnlodFul; // No Pinching branch - 4
-	Vector envlpNegStressUnlodFul; // 2
+	Vector envlpStressUnlodFroPosFul; // Unloading full branch from positive branch
+	Vector envlpStressUnlodFroNegFul; // Unloading full branch from negative branch
 
 	int tagMat;  // material tag
 
@@ -125,7 +125,8 @@ private:
 	Vector state3Stress; Vector state3Strain; Vector state4Stress; Vector state4Strain;
 	// 1: Reloading point;
 	Vector envlpPosDamgdStress; Vector envlpNegDamgdStress;
-	Vector envlpPosDamgdStressUnlodFul; Vector envlpNegDamgdStressUnlodFul; // No Pinching branch
+	Vector envlpDamgdStressUnlodFroPosFul; // Unloading full damage branch from positive branch
+	Vector envlpDamgdStressUnlodFroNegFul; // Unloading full damage branch from negative branch
 
 	// Trial state variables
 	double Tstress;
@@ -143,7 +144,7 @@ private:
 	double hghCstateStress;
 	double CminStrainDmnd;
 	double CmaxStrainDmnd;
-	double Cenergy;
+	double Cenergy;			//
 	double CgammaK;
 	double CgammaD;
 	double CgammaF;
@@ -160,7 +161,7 @@ private:
 	double hghTstateStress; // Largest stress during the loading history
 	double TminStrainDmnd;
 	double TmaxStrainDmnd;
-	double Tenergy;
+	double Tenergy;			//
 	double TgammaK;
 	double TgammaD;
 	double TgammaF;
@@ -178,19 +179,19 @@ private:
 	double kunload;
 	double elasticStrainEnergy;
 
-	void SetEnvelope(void);
-	void getstate(double, double);
-	double posEnvlpStress(double);
-	double posEnvlpTangent(double);
-	double negEnvlpStress(double);
-	double negEnvlpTangent(double);
-	void getState3(Vector&, Vector&, double);
-	void getState4(Vector&, Vector&, double);
-	double Envlp3Tangent(Vector, Vector, double);
-	double Envlp3Stress(Vector, Vector, double);
-	double Envlp4Tangent(Vector, Vector, double);
-	double Envlp4Stress(Vector, Vector, double);
-	void updateDmg(double, double);
+	void SetEnvelope(void);							// Set the initial backbone envelope for the material based upon the input by the user
+	void getstate(double, double);					// Determine the state of the material based upon the material history and current stress demand
+	double posEnvlpStress(double);					// Return positive damage stress of the material
+	double posEnvlpTangent(double);					// Return positive tangent of the material
+	double negEnvlpStress(double);					// Return negative damaged stress of the material
+	double negEnvlpTangent(double);					// Return negative tangent of the material
+	void getState3(Vector&, Vector&, double);		// Form the backbone envelope of state 3
+	void getState4(Vector&, Vector&, double);		// Form the backbone envelope of state 4
+	double Envlp3Tangent(Vector, Vector, double);	// Determine the tangent of the envelope at state 3
+	double Envlp3Stress(Vector, Vector, double);	// Determine the stress of the envelope at state 3
+	double Envlp4Tangent(Vector, Vector, double);	// Determine the tangent of the envelope at state 4
+	double Envlp4Stress(Vector, Vector, double);	// Determine the stress of the envelope at state 4
+	void updateDmg(double, double);					// Determine the damages at a particular state of the material
 	
 #ifdef _G3DEBUG
 FileStream* fg;
