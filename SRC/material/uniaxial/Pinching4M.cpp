@@ -154,7 +154,8 @@ Pinching4M::Pinching4M(int tag,
 	gammaE(ge), TnCycle(0.0), CnCycle(0.0), DmgCyc(dc),
 	rDispP(mdp), rForceP(mfp), uForceP(msp), rDispN(mdn), rForceN(mfn), uForceN(msn),
 	state3Stress(4), state3Strain(4), state4Stress(4), state4Strain(4),
-	envlpPosDamgdStress(6), envlpNegDamgdStress(6)
+	envlpPosDamgdStress(6), envlpNegDamgdStress(6), 
+	envlpPosStressUnlodFul(6), envlpNegStressUnlodFul(6), envlpPosDamgdStressUnlodFul(6), envlpNegDamgdStressUnlodFul(6)
 {
 	bool error = false;
 
@@ -188,10 +189,18 @@ Pinching4M::Pinching4M(int tag,
 		opserr << "ERROR: -- input backbone is not unique(one-to-one), Pinching4M::Pinching4M" << "\a";
 	}
 
+	// Yielding stress
+	stressyp = strain1p;
+	stressyn = strain1n;
+
 	envlpPosStress.Zero();
 	envlpPosStrain.Zero();
 	envlpNegStress.Zero();
 	envlpNegStrain.Zero();
+	envlpPosStressUnlodFul.Zero();
+	envlpNegStressUnlodFul.Zero();
+	envlpPosDamgdStressUnlodFul.Zero();
+	envlpNegDamgdStressUnlodFul.Zero();
 	energyCapacity = 0.0;
 	kunload = 0.0;
 	elasticStrainEnergy = 0.0;
@@ -205,6 +214,8 @@ Pinching4M::Pinching4M(int tag,
 
 	envlpPosDamgdStress = envlpPosStress;
 	envlpNegDamgdStress = envlpNegStress;
+	//envlpPosDamgdStressFul = envlpPosStress;
+	//envlpNegDamgdStressFul = envlpNegStress;
 	state3Stress.Zero();
 	state3Strain.Zero();
 	state4Stress.Zero();
@@ -231,7 +242,8 @@ Pinching4M::Pinching4M(int tag,
 	gammaE(ge), TnCycle(0.0), CnCycle(0.0), DmgCyc(dc),
 	rDispP(mdp), rForceP(mfp), uForceP(msp),
 	state3Stress(4), state3Strain(4), state4Stress(4), state4Strain(4),
-	envlpPosDamgdStress(6), envlpNegDamgdStress(6)
+	envlpPosDamgdStress(6), envlpNegDamgdStress(6), 
+	envlpPosStressUnlodFul(6), envlpNegStressUnlodFul(6), envlpPosDamgdStressUnlodFul(6), envlpNegDamgdStressUnlodFul(6)
 {
 	bool error = false;
 
@@ -264,10 +276,18 @@ Pinching4M::Pinching4M(int tag,
 	rForceN = rForceP; 
 	uForceN = uForceP;
 
+	// Yielding stress
+	stressyp = strain1p;
+	stressyn = strain1n;
+
 	envlpPosStress.Zero(); 
 	envlpPosStrain.Zero(); 
 	envlpNegStress.Zero(); 
 	envlpNegStrain.Zero();
+	envlpPosStressUnlodFul.Zero();
+	envlpNegStressUnlodFul.Zero();
+	envlpPosDamgdStressUnlodFul.Zero();
+	envlpNegDamgdStressUnlodFul.Zero();
 	energyCapacity = 0.0; 
 	kunload = 0.0; 
 	elasticStrainEnergy = 0.0;
@@ -280,6 +300,8 @@ Pinching4M::Pinching4M(int tag,
 
 	envlpPosDamgdStress = envlpPosStress; 
 	envlpNegDamgdStress = envlpNegStress;
+	//envlpPosDamgdStressFul = envlpPosStress;
+	//envlpNegDamgdStressFul = envlpNegStress;
 
 	// Initialize history variables
 	this->revertToStart();
@@ -352,6 +374,12 @@ int Pinching4M::setTrialStrain(double strain, double CstrainRate)
 		state3Stress(3) = hghTstateStress;
 
 		getState3(state3Strain, state3Stress, kunload);
+		opserr << "setTrialStrain: state3Strain = " << state3Strain << endln;
+		opserr << "setTrialStrain: state3Stress = " << state3Stress << endln;
+		opserr << "setTrialStrain: state3Stress = " << state3Stress << endln;
+		opserr << "setTrialStrain: envlpNegStress = " << envlpNegStress << endln;
+		opserr << "setTrialStrain: envlpNegStrain = " << envlpNegStrain << endln;
+		opserr << "setTrialStrain: envlpNegDamgdStress = " << envlpNegDamgdStress << endln;
 		Ttangent = Envlp3Tangent(state3Strain, state3Stress, strain);
 		Tstress = Envlp3Stress(state3Strain, state3Stress, strain);
 
@@ -364,6 +392,9 @@ int Pinching4M::setTrialStrain(double strain, double CstrainRate)
 		state4Stress(3) = hghTstateStress;
 
 		getState4(state4Strain, state4Stress, kunload);
+		//opserr << "setTrialStrain: envlpPosStress = " << envlpPosStress << endln;
+		//opserr << "setTrialStrain: envlpPosStrain = " << envlpPosStrain << endln;
+		//opserr << "setTrialStrain: envlpPosDamgdStress = " << envlpPosDamgdStress << endln;
 		Ttangent = Envlp4Tangent(state4Strain, state4Stress, strain);
 		Tstress = Envlp4Stress(state4Strain, state4Stress, strain);
 		break;
@@ -557,6 +588,10 @@ UniaxialMaterial* Pinching4M::getCopy(void)
 	theCopy->uMaxDamgd = uMaxDamgd;
 	theCopy->uMinDamgd = uMinDamgd;
 
+	// Yielding stress
+	theCopy->stressyp = strain1p;
+	theCopy->stressyn = strain1n;
+
 	for (int i = 0; i < 6; i++)
 	{
 		theCopy->envlpPosStrain(i) = envlpPosStrain(i);
@@ -565,6 +600,10 @@ UniaxialMaterial* Pinching4M::getCopy(void)
 		theCopy->envlpNegStress(i) = envlpNegStress(i);
 		theCopy->envlpNegDamgdStress(i) = envlpNegDamgdStress(i);
 		theCopy->envlpPosDamgdStress(i) = envlpPosDamgdStress(i);
+		theCopy->envlpPosStressUnlodFul(i) = envlpPosStressUnlodFul(i);
+		theCopy->envlpNegStressUnlodFul(i) = envlpNegStressUnlodFul(i);
+		theCopy->envlpNegDamgdStressUnlodFul(i) = envlpNegDamgdStressUnlodFul(i);
+		theCopy->envlpPosDamgdStressUnlodFul(i) = envlpPosDamgdStressUnlodFul(i);
 	}
 
 	for (int j = 0; j < 4; j++)
@@ -640,6 +679,22 @@ void Pinching4M::SetEnvelope(void)
 	envlpNegStrain(5) = 1e+6 * strain4n;
 	envlpNegStress(5) = (k2 > 0.0) ? stress4n + k2 * (envlpNegStrain(5) - strain4n) : stress4n * 1.1;
 
+	// No pinching branch
+	envlpNegStressUnlodFul(0) = -u * k;
+	envlpNegStressUnlodFul(1) = stress1p - 2 * stressyp;
+	envlpNegStressUnlodFul(2) = stress2p - 2 * stressyp;
+	envlpNegStressUnlodFul(3) = stress3p - 2 * stressyp;
+	envlpNegStressUnlodFul(4) = -stress4p;
+	envlpPosStressUnlodFul(0) = u * k;
+	envlpPosStressUnlodFul(1) = stress1n - 2 * stressyn;
+	envlpPosStressUnlodFul(2) = stress2n - 2 * stressyn;
+	envlpPosStressUnlodFul(3) = stress3n - 2 * stressyn;
+	envlpPosStressUnlodFul(4) = -stress4n;
+	//opserr << "SetEnvelope: envlpNegStressUnlodFul = " << envlpNegStressUnlodFul << endln;
+	//opserr << "SetEnvelope: envlpPosStressUnlodFul = " << envlpPosStressUnlodFul << endln;
+	//opserr << "SetEnvelope: stressyp = " << stressyp << endln;
+	//opserr << "SetEnvelope: stressyn = " << stressyn << endln;
+
 	// Define critical material properties
 	kElasticPos = envlpPosStress(1) / envlpPosStrain(1);
 	kElasticNeg = envlpNegStress(1) / envlpNegStrain(1);
@@ -700,7 +755,11 @@ void Pinching4M::getstate(double u, double du)
 				gammaFUsed = CgammaF;
 				for (int i = 0; i <= 5; i++) {
 					envlpNegDamgdStress(i) = envlpNegStress(i) * (1.0 - gammaFUsed);
+					envlpNegDamgdStressUnlodFul(i) = envlpNegStressUnlodFul(i) * (1.0 - gammaFUsed);
 				}
+				//opserr << "getstate: envlpNegStressT1 = " << envlpNegStress << endln;
+				//opserr << "getstate: envlpNegDamgdStressT1 = " << envlpNegDamgdStress << endln;
+				//opserr << "getstate: gammaFUsed = " << gammaFUsed << endln;
 				lowTstateStrain = envlpNegStrain(5);
 				lowTstateStress = envlpNegStress(5);
 				hghTstateStrain = envlpNegStrain(0);
@@ -712,7 +771,11 @@ void Pinching4M::getstate(double u, double du)
 				gammaFUsed = CgammaF;
 				for (int i = 0; i <= 5; i++) {
 					envlpNegDamgdStress(i) = envlpNegStress(i) * (1.0 - gammaFUsed);
+					envlpNegDamgdStressUnlodFul(i) = envlpNegStressUnlodFul(i) * (1.0 - gammaFUsed);
 				}
+				//opserr << "getstate: envlpNegStressT3 = " << envlpNegStress << endln;
+				//opserr << "getstate: envlpNegDamgdStressT3 = " << envlpNegDamgdStress << endln;
+				//opserr << "getstate: gammaFUsed = " << gammaFUsed << endln;
 				lowTstateStress = negEnvlpStress(uMinDamgd);
 				hghTstateStrain = Cstrain;
 				hghTstateStress = Cstress;
@@ -809,6 +872,7 @@ void Pinching4M::getstate(double u, double du)
 				gammaFUsed = CgammaF;
 				for (int i = 0; i <= 5; i++) {
 					envlpNegDamgdStress(i) = envlpNegStress(i) * (1.0 - gammaFUsed);
+					envlpNegDamgdStressUnlodFul(i) = envlpNegStressUnlodFul(i) * (1.0 - gammaFUsed);
 				}
 				lowTstateStress = negEnvlpStress(uMinDamgd);
 				hghTstateStrain = Cstrain;
@@ -914,10 +978,12 @@ void Pinching4M::getState3(Vector& state3Strain, Vector& state3Stress, double ku
 				state3Stress(1) = (st1 < st2) ? st1 : st2;
 			}
 		}
+
 		// If reload stiffness exceeds unload stiffness, reduce reload stiffness to make it equal to unload stiffness
 		if ((state3Stress(1) - state3Stress(0)) / (state3Strain(1) - state3Strain(0)) > kElasticNegDamgd) {
 			state3Strain(1) = lowTstateStrain + (state3Stress(1) - state3Stress(0)) / kElasticNegDamgd;
 		}
+
 		// Check that reloading point is not behind point 4
 		if (state3Strain(1) > state3Strain(3)) {
 			// Path taken to be a straight line between points 1 and 4
@@ -930,10 +996,12 @@ void Pinching4M::getState3(Vector& state3Strain, Vector& state3Stress, double ku
 		}
 		else {
 			if (TminStrainDmnd < envlpNegStrain(3)) {
-				state3Stress(2) = uForceN * envlpNegDamgdStress(4);
+				//state3Stress(2) = uForceN * envlpNegDamgdStress(4);
+				state3Stress(2) = uForceN * envlpNegDamgdStressUnlodFul(4);
 			}
 			else {
-				state3Stress(2) = uForceN * envlpNegDamgdStress(3);
+				//state3Stress(2) = uForceN * envlpNegDamgdStress(3);
+				state3Stress(2) = uForceN * envlpNegDamgdStressUnlodFul(3);
 			}
 			state3Strain(2) = hghTstateStrain - (hghTstateStress - state3Stress(2)) / kunload;
 
@@ -984,8 +1052,11 @@ void Pinching4M::getState3(Vector& state3Strain, Vector& state3Stress, double ku
 					state3Strain(1) = state3Strain(0) + (state3Stress(1) - state3Stress(0)) / slope12;
 					state3Strain(2) = state3Strain(3) - (state3Stress(3) - state3Stress(2)) / slope34;
 				}
+				//opserr << "getState3:if3:state3Stress = " << state3Stress << endln;
+				//opserr << "getState3:if3:state3Strain = " << state3Strain << endln;
 			}
 		}
+
 	}
 	else {
 		// Linear unload reload path is expected

@@ -102,8 +102,11 @@ private:
 	double stress3p; double strain3p; double stress4p; double strain4p;
 	double stress1n; double strain1n; double stress2n; double strain2n;
 	double stress3n; double strain3n; double stress4n; double strain4n;
+	double stressyp; double stressyn; // Yielding stress
 	Vector envlpPosStress; Vector envlpPosStrain;
 	Vector envlpNegStress; Vector envlpNegStrain;
+	Vector envlpPosStressUnlodFul; // No Pinching branch - 4
+	Vector envlpNegStressUnlodFul; // 2
 
 	int tagMat;  // material tag
 
@@ -120,7 +123,9 @@ private:
 	double rDispN; double rForceN; double uForceN;
 
 	Vector state3Stress; Vector state3Strain; Vector state4Stress; Vector state4Strain;
+	// 1: Reloading point;
 	Vector envlpPosDamgdStress; Vector envlpNegDamgdStress;
+	Vector envlpPosDamgdStressUnlodFul; Vector envlpNegDamgdStressUnlodFul; // No Pinching branch
 
 	// Trial state variables
 	double Tstress;
@@ -151,8 +156,8 @@ private:
 	double TstrainRate;
 	double lowTstateStrain;
 	double lowTstateStress;
-	double hghTstateStrain;
-	double hghTstateStress;
+	double hghTstateStrain; // Largest strain during the loading history
+	double hghTstateStress; // Largest stress during the loading history
 	double TminStrainDmnd;
 	double TmaxStrainDmnd;
 	double Tenergy;
