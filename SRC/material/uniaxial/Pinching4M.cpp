@@ -252,17 +252,34 @@ Pinching4M::Pinching4M(int tag,
 		opserr << "ERROR: -- input backbone is not unique(one-to-one), Pinching4M::Pinching4M" << "\a";
 	}
 
-	strain1n = -strain1p; stress1n = -stress1p; strain2n = -strain2p; stress2n = -stress2p;
-	strain3n = -strain3p; stress3n = -stress3p; strain4n = -strain4p; stress4n = -stress4p;
-	rDispN = rDispP; rForceN = rForceP; uForceN = uForceP;
+	strain1n = -strain1p; 
+	stress1n = -stress1p; 
+	strain2n = -strain2p; 
+	stress2n = -stress2p;
+	strain3n = -strain3p; 
+	stress3n = -stress3p; 
+	strain4n = -strain4p; 
+	stress4n = -stress4p;
+	rDispN = rDispP; 
+	rForceN = rForceP; 
+	uForceN = uForceP;
 
-	envlpPosStress.Zero(); envlpPosStrain.Zero(); envlpNegStress.Zero(); envlpNegStrain.Zero();
-	energyCapacity = 0.0; kunload = 0.0; elasticStrainEnergy = 0.0;
-	state3Stress.Zero(); state3Strain.Zero(); state4Stress.Zero(); state4Strain.Zero();
+	envlpPosStress.Zero(); 
+	envlpPosStrain.Zero(); 
+	envlpNegStress.Zero(); 
+	envlpNegStrain.Zero();
+	energyCapacity = 0.0; 
+	kunload = 0.0; 
+	elasticStrainEnergy = 0.0;
+	state3Stress.Zero(); 
+	state3Strain.Zero(); 
+	state4Stress.Zero(); 
+	state4Strain.Zero();
 	// Set envelope slopes
 	this->SetEnvelope();
 
-	envlpPosDamgdStress = envlpPosStress; envlpNegDamgdStress = envlpNegStress;
+	envlpPosDamgdStress = envlpPosStress; 
+	envlpNegDamgdStress = envlpNegStress;
 
 	// Initialize history variables
 	this->revertToStart();
@@ -905,7 +922,7 @@ void Pinching4M::getState3(Vector& state3Strain, Vector& state3Stress, double ku
 		if (state3Strain(1) > state3Strain(3)) {
 			// Path taken to be a straight line between points 1 and 4
 			double du = state3Strain(3) - state3Strain(0);
-			double df = state3Stress(3) = state3Stress(0);
+			double df = state3Stress(3) - state3Stress(0);
 			state3Strain(1) = state3Strain(0) + 0.33 * du;
 			state3Strain(2) = state3Strain(0) + 0.67 * du;
 			state3Stress(1) = state3Stress(0) + 0.33 * df;
@@ -963,7 +980,7 @@ void Pinching4M::getState3(Vector& state3Strain, Vector& state3Stress, double ku
 					double slope12 = (state3Stress(1) - state3Stress(0)) / (state3Strain(1) - state3Strain(0));
 					double slope34 = (state3Stress(3) - state3Stress(2)) / (state3Strain(3) - state3Strain(2));
 					state3Stress(1) = avgforce - dfr;
-					state3Stress(2) = avgforce - dfr;
+					state3Stress(2) = avgforce + dfr;
 					state3Strain(1) = state3Strain(0) + (state3Stress(1) - state3Stress(0)) / slope12;
 					state3Strain(2) = state3Strain(3) - (state3Stress(3) - state3Stress(2)) / slope34;
 				}
@@ -1041,7 +1058,7 @@ void Pinching4M::getState4(Vector& state4Strain, Vector& state4Stress, double ku
 			double df = state4Stress(3) - state4Stress(0);
 			state4Strain(1) = state4Strain(0) + 0.33 * du;
 			state4Strain(2) = state4Strain(0) + 0.67 * du;
-			state4Stress(1) = state4Stress(0) + 0.33 * du;
+			state4Stress(1) = state4Stress(0) + 0.33 * df;
 			state4Stress(2) = state4Stress(0) + 0.67 * df;
 		}
 		else {
@@ -1080,7 +1097,7 @@ void Pinching4M::getState4(Vector& state4Strain, Vector& state4Stress, double ku
 					// Point 2 should be along a line between 2 and 4
 					double du = state4Strain(3) - state4Strain(1);
 					double df = state4Stress(3) - state4Stress(1);
-					state4Strain(2) - state4Strain(1) + 0.5 * du;
+					state4Strain(2) = state4Strain(1) + 0.5 * du;
 					state4Stress(2) = state4Stress(1) + 0.5 * df;
 				}
 				else {
@@ -1097,7 +1114,7 @@ void Pinching4M::getState4(Vector& state4Strain, Vector& state4Stress, double ku
 					state4Stress(1) = avgforce - dfr;
 					state4Stress(2) = avgforce + dfr;
 					state4Strain(1) = state4Strain(0) + (state4Stress(1) - state4Stress(0)) / slope12;
-					state4Strain(2) = state4Strain(3) + (state4Stress(3) - state4Stress(2)) / slope34;
+					state4Strain(2) = state4Strain(3) - (state4Stress(3) - state4Stress(2)) / slope34;
 				}
 			}
 		}
