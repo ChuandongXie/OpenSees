@@ -105,8 +105,6 @@ private:
 	double stressyp; double stressyn; // Yielding stress
 	Vector envlpPosStress; Vector envlpPosStrain;
 	Vector envlpNegStress; Vector envlpNegStrain;
-	Vector envlpStressUnlodFroPosFul; // Unloading full branch from positive branch
-	Vector envlpStressUnlodFroNegFul; // Unloading full branch from negative branch
 
 	int tagMat;  // material tag
 
@@ -123,10 +121,11 @@ private:
 	double rDispN; double rForceN; double uForceN;
 
 	Vector state3Stress; Vector state3Strain; Vector state4Stress; Vector state4Strain;
+	// 0: Low state;
 	// 1: Reloading point;
+	// 2:
+	// 3: high state;
 	Vector envlpPosDamgdStress; Vector envlpNegDamgdStress;
-	Vector envlpDamgdStressUnlodFroPosFul; // Unloading full damage branch from positive branch
-	Vector envlpDamgdStressUnlodFroNegFul; // Unloading full damage branch from negative branch
 
 	// Trial state variables
 	double Tstress;
@@ -142,8 +141,8 @@ private:
 	double lowCstateStress;
 	double hghCstateStrain;
 	double hghCstateStress;
-	double CminStrainDmnd;
-	double CmaxStrainDmnd;
+	double CminStrainDmnd; // Minimum historic deformation demands
+	double CmaxStrainDmnd; // Maximum historic deformation demands
 	double Cenergy;			//
 	double CgammaK;
 	double CgammaD;
@@ -173,6 +172,8 @@ private:
 	double kElasticNegDamgd;
 	double uMaxDamgd;
 	double uMinDamgd;
+	double kPostYieldPosDamgd; // Post-yielding stiffness of positive branch
+	double kPostYieldNegDamgd; // Post-yielding stiffness of negative branch
 
 	// Energy parameters
 	double energyCapacity;

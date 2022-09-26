@@ -154,8 +154,7 @@ Pinching4M::Pinching4M(int tag,
 	gammaE(ge), TnCycle(0.0), CnCycle(0.0), DmgCyc(dc),
 	rDispP(mdp), rForceP(mfp), uForceP(msp), rDispN(mdn), rForceN(mfn), uForceN(msn),
 	state3Stress(4), state3Strain(4), state4Stress(4), state4Strain(4),
-	envlpPosDamgdStress(6), envlpNegDamgdStress(6), 
-	envlpStressUnlodFroNegFul(6), envlpStressUnlodFroPosFul(6), envlpDamgdStressUnlodFroPosFul(6), envlpDamgdStressUnlodFroNegFul(6)
+	envlpPosDamgdStress(6), envlpNegDamgdStress(6)
 {
 	bool error = false;
 
@@ -178,7 +177,7 @@ Pinching4M::Pinching4M(int tag,
 		error = true;
 	if (strain4n >= 0.0)
 		error = true;
-	
+
 	if (error) {
 		opserr << "ERROR: -- input backbone is not unique(one-to-one), Pinching4M::Pinching4M" << "\a";
 	}
@@ -192,31 +191,26 @@ Pinching4M::Pinching4M(int tag,
 	envlpPosStrain.Zero();
 	envlpNegStress.Zero();
 	envlpNegStrain.Zero();
-	envlpStressUnlodFroNegFul.Zero();
-	envlpStressUnlodFroPosFul.Zero();
-	envlpDamgdStressUnlodFroPosFul.Zero();
-	envlpDamgdStressUnlodFroNegFul.Zero();
-	
+
 	// Initialize state3/state4 variables
 	state3Stress.Zero();
 	state3Strain.Zero();
 	state4Stress.Zero();
 	state4Strain.Zero();
 
-	envlpPosDamgdStress = envlpPosStress;
-	envlpNegDamgdStress = envlpNegStress;
-
 	energyCapacity = 0.0;
 	kunload = 0.0;
 	elasticStrainEnergy = 0.0;
 
-#ifdef _G3DEBUG
-	fg = new FileStream();
-	fg->setFile("Pinch4MDamage.out", APPEND);
-#endif
+	// Post yielding stiffness
+	kPostYieldPosDamgd = 0.0;
+	kPostYieldNegDamgd = 0.0;
 
 	// Set envelope slopes
 	this->SetEnvelope();
+
+	envlpPosDamgdStress = envlpPosStress;
+	envlpNegDamgdStress = envlpNegStress;
 
 	// Initialize history variables
 	this->revertToStart();
@@ -240,8 +234,7 @@ Pinching4M::Pinching4M(int tag,
 	gammaE(ge), TnCycle(0.0), CnCycle(0.0), DmgCyc(dc),
 	rDispP(mdp), rForceP(mfp), uForceP(msp),
 	state3Stress(4), state3Strain(4), state4Stress(4), state4Strain(4),
-	envlpPosDamgdStress(6), envlpNegDamgdStress(6), 
-	envlpStressUnlodFroNegFul(6), envlpStressUnlodFroPosFul(6), envlpDamgdStressUnlodFroPosFul(6), envlpDamgdStressUnlodFroNegFul(6)
+	envlpPosDamgdStress(6), envlpNegDamgdStress(6)
 {
 	bool error = false;
 
@@ -260,16 +253,16 @@ Pinching4M::Pinching4M(int tag,
 	}
 
 	// Set negative variables
-	strain1n = -strain1p; 
-	stress1n = -stress1p; 
-	strain2n = -strain2p; 
+	strain1n = -strain1p;
+	stress1n = -stress1p;
+	strain2n = -strain2p;
 	stress2n = -stress2p;
-	strain3n = -strain3p; 
-	stress3n = -stress3p; 
-	strain4n = -strain4p; 
+	strain3n = -strain3p;
+	stress3n = -stress3p;
+	strain4n = -strain4p;
 	stress4n = -stress4p;
-	rDispN = rDispP; 
-	rForceN = rForceP; 
+	rDispN = rDispP;
+	rForceN = rForceP;
 	uForceN = uForceP;
 
 	// Yielding stress
@@ -281,31 +274,26 @@ Pinching4M::Pinching4M(int tag,
 	envlpPosStrain.Zero();
 	envlpNegStress.Zero();
 	envlpNegStrain.Zero();
-	envlpStressUnlodFroNegFul.Zero();
-	envlpStressUnlodFroPosFul.Zero();
-	envlpDamgdStressUnlodFroPosFul.Zero();
-	envlpDamgdStressUnlodFroNegFul.Zero();
 
 	// Initialize state3/state4 variables
-	state3Stress.Zero();
+	state3Stress.Zero(); // Four values inside
 	state3Strain.Zero();
 	state4Stress.Zero();
 	state4Strain.Zero();
-
-	envlpPosDamgdStress = envlpPosStress;
-	envlpNegDamgdStress = envlpNegStress;
 
 	energyCapacity = 0.0;
 	kunload = 0.0;
 	elasticStrainEnergy = 0.0;
 
-#ifdef _G3DEBUG
-	fg = new FileStream();
-	fg->setFile("Pinch4MDamage.out", APPEND);
-#endif
+	// Post yielding stiffness
+	kPostYieldPosDamgd = 0.0;
+	kPostYieldNegDamgd = 0.0;
 
 	// Set envelope slopes
 	this->SetEnvelope();
+
+	envlpPosDamgdStress = envlpPosStress;
+	envlpNegDamgdStress = envlpNegStress;
 
 	// Initialize history variables
 	this->revertToStart();
@@ -377,9 +365,9 @@ void Pinching4M::SetEnvelope(void)
 	// No pinching branches
 
 
-	//// Define critical material properties
-	//kElasticPos = envlpPosStress(1) / envlpPosStrain(1);
-	//kElasticNeg = envlpNegStress(1) / envlpNegStrain(1);
+	// Define critical material properties
+	kElasticPos = envlpPosStress(1) / envlpPosStrain(1); // Elastic stiffness of positive branch
+	kElasticNeg = envlpNegStress(1) / envlpNegStrain(1); // Elastic stiffness of negative branch
 
 	double energypos = 0.5 * envlpPosStrain(0) * envlpPosStress(0);
 
@@ -400,6 +388,7 @@ void Pinching4M::SetEnvelope(void)
 
 int Pinching4M::revertToStart(void)
 {
+	// Set converge material parameters
 	Cstate = 0;
 	Cstrain = 0.0;
 	Cstress = 0.0;
@@ -408,7 +397,7 @@ int Pinching4M::revertToStart(void)
 	lowCstateStress = envlpNegStress(0);
 	hghCstateStrain = envlpPosStrain(0);
 	hghCstateStress = envlpPosStress(0);
-	CminStrainDmnd = envlpNegStrain(1);
+	CminStrainDmnd = envlpNegStrain(1); // After yielding point damage could happen
 	CmaxStrainDmnd = envlpPosStrain(1);
 	Cenergy = 0.0;
 	CgammaK = 0.0;
@@ -428,35 +417,43 @@ int Pinching4M::revertToStart(void)
 	return 0;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
+int Pinching4M::revertToLastCommit(void)
+{
+	Tstate = Cstate;
+	TstrainRate = CstrainRate;
+	lowTstateStrain = lowCstateStrain;
+	lowTstateStress = lowCstateStress;
+	hghTstateStrain = hghCstateStrain;
+	hghTstateStress = hghCstateStress;
+	TminStrainDmnd = CminStrainDmnd;
+	TmaxStrainDmnd = CmaxStrainDmnd;
+	Tenergy = Cenergy;
+	Tstrain = Cstrain;
+	Tstress = Cstress;
+	TgammaD = CgammaD;
+	TgammaK = CgammaK;
+	TgammaF = CgammaF;
+	TnCycle = CnCycle;
+	return 0;
+}
 
 int Pinching4M::setTrialStrain(double strain, double CstrainRate)
 {
-	Tstrain = strain;
+	// Set trial parameter
+	Tstrain = strain; // Get strain
 	Tstate = Cstate;
-	//Tenergy = Cenergy;
-	//lowTstateStrain = lowCstateStrain;
-	//hghTstateStrain = hghCstateStrain;
-	//lowTstateStress = lowCstateStress;
-	//hghTstateStress = hghCstateStress;
-	//TminStrainDmnd = CminStrainDmnd;
-	//TmaxStrainDmnd = CmaxStrainDmnd;
-	//TgammaF = CgammaF;
-	//TgammaK = CgammaK;
-	//TgammaD = CgammaD;
+	Tenergy = Cenergy;
+	lowTstateStrain = lowCstateStrain;
+	hghTstateStrain = hghCstateStrain;
+	lowTstateStress = lowCstateStress;
+	hghTstateStress = hghCstateStress;
+	TminStrainDmnd = CminStrainDmnd;
+	TmaxStrainDmnd = CmaxStrainDmnd;
+	TgammaF = CgammaF;
+	TgammaK = CgammaK;
+	TgammaD = CgammaD;
 
-	dstrain = Tstrain - Cstrain;
+	dstrain = Tstrain - Cstrain; // Get delta strain
 	if (dstrain<1e-12 && dstrain>-1e-12) {
 		dstrain = 0.0;
 	}
@@ -467,32 +464,26 @@ int Pinching4M::setTrialStrain(double strain, double CstrainRate)
 	switch (Tstate)
 	{
 	case 0:
-		Ttangent = envlpPosStress(0) / envlpPosStrain(0);
+		Ttangent = envlpPosStress(0) / envlpPosStrain(0); // Use positive branch elastic stiffness for trial
 		Tstress = Ttangent * Tstrain;
 		break;
 	case 1:
-		Tstress = posEnvlpStress(strain);
+		Tstress = posEnvlpStress(strain); // Use positive branch data
 		Ttangent = posEnvlpTangent(strain);
 		break;
 	case 2:
-		Ttangent = negEnvlpTangent(strain);
+		Ttangent = negEnvlpTangent(strain); // Use negative branch data
 		Tstress = negEnvlpStress(strain);
 		break;
 	case 3:
 		kunload = (hghTstateStrain < 0.0) ? kElasticNegDamgd : kElasticPosDamgd;
-		state3Strain(0) = lowTstateStrain;
+		state3Strain(0) = lowTstateStrain; // Update state 3 threshold
 		state3Strain(3) = hghTstateStrain;
 		state3Stress(0) = lowTstateStress;
 		state3Stress(3) = hghTstateStress;
 
-		getState3(state3Strain, state3Stress, kunload);
-		opserr << "setTrialStrain: state3Strain = " << state3Strain << endln;
-		opserr << "setTrialStrain: state3Stress = " << state3Stress << endln;
-		opserr << "setTrialStrain: state3Stress = " << state3Stress << endln;
-		opserr << "setTrialStrain: envlpNegStress = " << envlpNegStress << endln;
-		opserr << "setTrialStrain: envlpNegStrain = " << envlpNegStrain << endln;
-		opserr << "setTrialStrain: envlpNegDamgdStress = " << envlpNegDamgdStress << endln;
-		Ttangent = Envlp3Tangent(state3Strain, state3Stress, strain);
+		getState3(state3Strain, state3Stress, kunload); // Update state3 branch
+		Ttangent = Envlp3Tangent(state3Strain, state3Stress, strain); // Use state3 branch data
 		Tstress = Envlp3Stress(state3Strain, state3Stress, strain);
 
 		break;
@@ -503,8 +494,8 @@ int Pinching4M::setTrialStrain(double strain, double CstrainRate)
 		state4Stress(0) = lowTstateStress;
 		state4Stress(3) = hghTstateStress;
 
-		getState4(state4Strain, state4Stress, kunload);
-		Ttangent = Envlp4Tangent(state4Strain, state4Stress, strain);
+		getState4(state4Strain, state4Stress, kunload); // Update state4 branch
+		Ttangent = Envlp4Tangent(state4Strain, state4Stress, strain); // Use state4 branch data
 		Tstress = Envlp4Stress(state4Strain, state4Stress, strain);
 		break;
 	}
@@ -512,13 +503,13 @@ int Pinching4M::setTrialStrain(double strain, double CstrainRate)
 	double denergy = 0.5 * (Tstress + Cstress) * dstrain;
 	elasticStrainEnergy = (Tstrain > 0.0) ? 0.5 * Tstress / kElasticPosDamgd * Tstress : 0.5 * Tstress / kElasticNegDamgd * Tstress;
 
-	Tenergy = Cenergy + denergy;
+	Tenergy = Cenergy + denergy; // Update damage
 
 	updateDmg(Tstrain, dstrain);
 	return 0;
 }
 
-void Pinching4M::getstate(double u, double du) // Tstrain, dstrain
+void Pinching4M::getstate(double u, double du) // Trail strain and delta strain
 {
 	int cid = 0;
 	int cis = 0;
@@ -526,117 +517,113 @@ void Pinching4M::getstate(double u, double du) // Tstrain, dstrain
 	if (du * CstrainRate <= 0.0) { // strainRate = 0.0
 		cid = 1;
 	}
-	if (u < lowTstateStrain || u > hghTstateStrain || cid) {
-		if (Tstate == 0) {
-			if (u > hghTstateStrain) {
+	if (u < lowTstateStrain || u > hghTstateStrain || cid) { // Strain lager than minimum value
+		if (Tstate == 0) { // First running
+			if (u > hghTstateStrain) { // Positive branch
 				cis = 1;
 				newState = 1;
-				lowTstateStrain = envlpPosStrain(0);
+				lowTstateStrain = envlpPosStrain(0); // Use postive branch data
 				lowTstateStress = envlpPosStress(0);
 				hghTstateStrain = envlpPosStrain(5);
 				hghTstateStress = envlpPosStress(5);
 			}
-			else if (u < lowTstateStrain) {
+			else if (u < lowTstateStrain) { // Negative branch
 				cis = 1;
 				newState = 2;
-				lowTstateStrain = envlpNegStrain(5);
+				lowTstateStrain = envlpNegStrain(5); // Use negative branch data
 				lowTstateStress = envlpNegStress(5);
 				hghTstateStrain = envlpNegStrain(0);
 				hghTstateStress = envlpNegStress(0);
 			}
 		}
-		else if (Tstate == 1 && du < 0.0) {
+		else if (Tstate == 1 && du < 0.0) { // Unload from positive branch
 			cis = 1;
-			if (Cstrain > TmaxStrainDmnd) {
-				TmaxStrainDmnd = u - du;
+			if (Cstrain > TmaxStrainDmnd) { // Update TmaxStrainDmnd
+				TmaxStrainDmnd = u - du; // Is this correct? du is negative value
 			}
-			if (TmaxStrainDmnd < uMaxDamgd) {
+			if (TmaxStrainDmnd < uMaxDamgd) { // maxStrainDmnd should less than uMaxDamgd
 				TmaxStrainDmnd = uMaxDamgd;
 			}
-			if (u < uMinDamgd) {
-				newState = 2;
+			if (u < uMinDamgd) {	// u less than damage strain
+				newState = 2;		// Assign negative branch
 				gammaFUsed = CgammaF;
 				for (int i = 0; i <= 5; i++) {
-					envlpNegDamgdStress(i) = envlpNegStress(i) * (1.0 - gammaFUsed);
-					envlpDamgdStressUnlodFroNegFul(i) = envlpStressUnlodFroPosFul(i) * (1.0 - gammaFUsed);
+					envlpNegDamgdStress(i) = envlpNegStress(i) * (1.0 - gammaFUsed); // Update damaged branch every time
 				}
-				//opserr << "getstate: envlpNegStressT1 = " << envlpNegStress << endln;
-				//opserr << "getstate: envlpNegDamgdStressT1 = " << envlpNegDamgdStress << endln;
-				//opserr << "getstate: gammaFUsed = " << gammaFUsed << endln;
+				kPostYieldNegDamgd = (envlpNegDamgdStress(2) - envlpNegDamgdStress(1)) / (envlpNegStrain(2) - envlpNegStrain(1)); // Post-yielding damaged stiffness at negative branch
 				lowTstateStrain = envlpNegStrain(5);
 				lowTstateStress = envlpNegStress(5);
 				hghTstateStrain = envlpNegStrain(0);
 				hghTstateStress = envlpNegStress(0);
 			}
 			else {
-				newState = 3;
-				lowTstateStrain = uMinDamgd;
+				newState = 3; // Negative pinching branch
+				lowTstateStrain = uMinDamgd; // Update lowTstateStrain
 				gammaFUsed = CgammaF;
 				for (int i = 0; i <= 5; i++) {
-					envlpNegDamgdStress(i) = envlpNegStress(i) * (1.0 - gammaFUsed);
-					envlpDamgdStressUnlodFroNegFul(i) = envlpStressUnlodFroPosFul(i) * (1.0 - gammaFUsed);
+					envlpNegDamgdStress(i) = envlpNegStress(i) * (1.0 - gammaFUsed); // Update damaged branch every time
 				}
-				//opserr << "getstate: envlpNegStressT3 = " << envlpNegStress << endln;
-				//opserr << "getstate: envlpNegDamgdStressT3 = " << envlpNegDamgdStress << endln;
-				//opserr << "getstate: gammaFUsed = " << gammaFUsed << endln;
-				lowTstateStress = negEnvlpStress(uMinDamgd);
-				hghTstateStrain = Cstrain;
-				hghTstateStress = Cstress;
+				kPostYieldNegDamgd = (envlpNegDamgdStress(2) - envlpNegDamgdStress(1)) / (envlpNegStrain(2) - envlpNegStrain(1));
+				lowTstateStress = negEnvlpStress(uMinDamgd); // Update lowTstateStress
+				hghTstateStrain = Cstrain; // Set hghTstateStrain as history strain
+				hghTstateStress = Cstress; // Set hghTstateStress as history strain
 			}
 			gammaKUsed = CgammaK;
-			kElasticPosDamgd = kElasticPos * (1.0 - gammaKUsed);
+			kElasticPosDamgd = kElasticPos * (1.0 - gammaKUsed); // Update damaged stiffness
 		}
-		else if (Tstate == 2 && du > 0.0) {
+		else if (Tstate == 2 && du > 0.0) { // Reload from negative branch
 			cis = 1;
 			if (Cstrain < TminStrainDmnd) {
-				TminStrainDmnd = Cstrain;
+				TminStrainDmnd = Cstrain; // Set history strain as TminStrainDmnd
 			}
 			if (TminStrainDmnd > uMinDamgd) {
-				TminStrainDmnd = uMinDamgd;
+				TminStrainDmnd = uMinDamgd; // TminStrainDmnd should be less than uMinDamgd
 			}
-			if (u > uMaxDamgd) {
-				newState = 1;
+			if (u > uMaxDamgd) { // Larger than pinching threshold
+				newState = 1; // Positive branch
 				gammaFUsed = CgammaF;
 				for (int i = 0; i <= 5; i++) {
-					envlpPosDamgdStress(i) = envlpPosStress(i) * (1.0 - gammaFUsed);
+					envlpPosDamgdStress(i) = envlpPosStress(i) * (1.0 - gammaFUsed); // Update damaged branch every time
 				}
+				kPostYieldPosDamgd = (envlpPosDamgdStress(2) - envlpPosDamgdStress(1)) / (envlpPosStrain(2) - envlpPosStrain(1));
 				lowTstateStrain = envlpPosStrain(0);
 				lowTstateStress = envlpPosStress(0);
 				hghTstateStrain = envlpPosStrain(5);
 				hghTstateStress = envlpPosStress(5);
 			}
 			else {
-				newState = 4;
+				newState = 4; // Positive pinching branch
 				lowTstateStrain = Cstrain;
 				lowTstateStress = Cstress;
 				hghTstateStrain = uMaxDamgd;
-				gammaFUsed = CgammaF;
+				gammaFUsed = CgammaF; // Update gammaFUsed
 				for (int i = 0; i <= 5; i++) {
-					envlpPosDamgdStress(i) = envlpPosStress(i) * (1.0 - gammaFUsed);
+					envlpPosDamgdStress(i) = envlpPosStress(i) * (1.0 - gammaFUsed); // Update damaged envelope
 				}
-				hghTstateStress = posEnvlpStress(uMaxDamgd);
+				kPostYieldPosDamgd = (envlpPosDamgdStress(2) - envlpPosDamgdStress(1)) / (envlpPosStrain(2) - envlpPosStrain(1));
+				hghTstateStress = posEnvlpStress(uMaxDamgd); // Update hghTstateStress
 			}
 			gammaKUsed = CgammaK;
-			kElasticNegDamgd = kElasticNeg * (1.0 - gammaKUsed);
+			kElasticNegDamgd = kElasticNeg * (1.0 - gammaKUsed); // Update damaged stiffness
 		}
 		else if (Tstate == 3) {
-			if (u < lowTstateStrain) {
+			if (u < lowTstateStrain) { // u not in the range of pinching strain
 				cis = 1;
-				newState = 2;
-				lowTstateStrain = envlpNegStrain(5);
+				newState = 2; // Negative branch
+				lowTstateStrain = envlpNegStrain(5); // Update state strain
 				hghTstateStrain = envlpNegStrain(0);
 				lowTstateStress = envlpNegDamgdStress(5);
 				hghTstateStress = envlpNegDamgdStress(0);
 			}
-			else if (u > uMaxDamgd && du > 0.0) {
+			else if (u > uMaxDamgd && du > 0.0) { // u not in the range of pinching strain
 				cis = 1;
-				newState = 1;
-				lowTstateStrain = envlpPosStrain(0);
+				newState = 1; // Positive branch
+				lowTstateStrain = envlpPosStrain(0); // Update state strain
 				lowTstateStress = envlpPosStress(0);
 				hghTstateStrain = envlpPosStrain(5);
 				hghTstateStress = envlpPosStress(5);
 			}
-			else if (du > 0.0) {
+			else if (du > 0.0) { // Positive pinching branch from negative pinching branch
 				cis = 1;
 				newState = 4;
 				lowTstateStrain = Cstrain;
@@ -646,961 +633,956 @@ void Pinching4M::getstate(double u, double du) // Tstrain, dstrain
 				for (int i = 0; i <= 5; i++) {
 					envlpPosDamgdStress(i) = envlpPosStress(i) * (1.0 - gammaFUsed);
 				}
+				kPostYieldPosDamgd = (envlpPosDamgdStress(2) - envlpPosDamgdStress(1)) / (envlpPosStrain(2) - envlpPosStrain(1));
 				hghTstateStress = posEnvlpStress(uMaxDamgd);
 				gammaKUsed = CgammaK;
 				kElasticNegDamgd = kElasticNeg * (1.0 - gammaKUsed);
-			}
+			} // Continue on state 3
 		}
 		else if (Tstate == 4) {
-			if (u > hghTstateStrain) {
+			if (u > hghTstateStrain) { // Not in the range of pinching strain
 				cis = 1;
-				newState = 1;
-				lowTstateStrain = envlpPosStrain(0);
+				newState = 1; // Positive branch
+				lowTstateStrain = envlpPosStrain(0); // Update state variables
 				lowTstateStress = envlpPosDamgdStress(0);
 				hghTstateStrain = envlpPosStrain(5);
 				hghTstateStress = envlpPosDamgdStress(5);
 			}
-			else if (u < uMinDamgd && du < 0.0) {
+			else if (u < uMinDamgd && du < 0.0) { // Not in the range of pinching strain
 				cis = 1;
-				newState = 2;
-				lowTstateStrain = envlpNegStrain(5);
+				newState = 2; // Negative branch from positive pinching branch
+				lowTstateStrain = envlpNegStrain(5); // Update state variables
 				lowTstateStress = envlpNegDamgdStress(5);
 				hghTstateStrain = envlpNegStrain(0);
 				hghTstateStress = envlpNegDamgdStress(0);
 			}
-			else if (du < 0.0) {
+			else if (du < 0.0) { // Negative pinching branch from positive pinching branch
 				cis = 1;
 				newState = 3;
 				lowTstateStrain = uMinDamgd;
 				gammaFUsed = CgammaF;
 				for (int i = 0; i <= 5; i++) {
 					envlpNegDamgdStress(i) = envlpNegStress(i) * (1.0 - gammaFUsed);
-					envlpDamgdStressUnlodFroNegFul(i) = envlpStressUnlodFroPosFul(i) * (1.0 - gammaFUsed);
 				}
+				kPostYieldNegDamgd = (envlpNegDamgdStress(2) - envlpNegDamgdStress(1)) / (envlpNegStrain(2) - envlpNegStrain(1));
 				lowTstateStress = negEnvlpStress(uMinDamgd);
 				hghTstateStrain = Cstrain;
 				hghTstateStress = Cstress;
 				gammaKUsed = CgammaK;
 				kElasticPosDamgd = kElasticPos * (1.0 - gammaKUsed);
-			}
+			} // Continue on state 4
 		}
 	}
 	if (cis) {
-		Tstate = newState;
+		Tstate = newState; // update Tstate
 	}
+}
+
+double Pinching4M::posEnvlpStress(double u)
+{
+	double k = 0.0;
+	int i = 0;
+	double f = 0.0;
+	while (k == 0.0 && i <= 4) {
+		if (u <= envlpPosStrain(i + 1)) { // Look for current position
+			k = (envlpPosDamgdStress(i + 1) - envlpPosDamgdStress(i)) / (envlpPosStrain(i + 1) - envlpPosStrain(i));
+			f = envlpPosDamgdStress(i) + (u - envlpPosStrain(i)) * k;
+		}
+		i++;
+	}
+	if (k == 0.0) {
+		k = (envlpPosDamgdStress(5) - envlpPosDamgdStress(4)) / (envlpPosStrain(5) - envlpPosStrain(4));
+		f = envlpPosDamgdStress(5) + k * (u - envlpPosStrain(5));
+	}
+	return f;
+}
+
+double Pinching4M::posEnvlpTangent(double u)
+{
+	double k = 0.0;
+	int i = 0;
+	while (k == 0.0 && i <= 4) {
+		if (u <= envlpPosStrain(i + 1)) {
+			k = (envlpPosDamgdStress(i + 1) - envlpPosDamgdStress(i)) / (envlpPosStrain(i + 1) - envlpPosStrain(i));
+		}
+		i++;
+	}
+	if (k == 0.0) {
+		k = (envlpPosDamgdStress(5) - envlpPosDamgdStress(4)) / (envlpPosStrain(5) - envlpPosStrain(4));
+	}
+	return k;
+}
+
+double Pinching4M::negEnvlpStress(double u)
+{
+	double k = 0.0;
+	int i = 0;
+	double f = 0.0;
+	while (k == 0.0 && i <= 4) {
+		if (u >= envlpNegStrain(i + 1)) { // Look for current position
+			k = (envlpNegDamgdStress(i) - envlpNegDamgdStress(i + 1)) / (envlpNegStrain(i) - envlpNegStrain(i + 1));
+			f = envlpNegDamgdStress(i + 1) + (u - envlpNegStrain(i + 1)) * k;
+		}
+		i++;
+	}
+	if (k == 0.0) {
+		k = (envlpNegDamgdStress(4) - envlpNegDamgdStress(5)) / (envlpNegStrain(4) - envlpNegStrain(5));
+		f = envlpNegDamgdStress(5) + k * (u - envlpNegStrain(5));
+	}
+	return f;
+}
+
+double Pinching4M::negEnvlpTangent(double u)
+{
+	double k = 0.0;
+	int i = 0;
+	while (k == 0.0 && i <= 4) {
+		if (u >= envlpNegStrain(i + 1)) {
+			k = (envlpNegDamgdStress(i) - envlpNegDamgdStress(i + 1)) / (envlpNegStrain(i) - envlpNegStrain(i + 1));
+		}
+		i++;
+	}
+	if (k == 0.0) {
+		k = (envlpNegDamgdStress(4) - envlpNegDamgdStress(5)) / (envlpNegStrain(4) - envlpNegStrain(5));
+	}
+	return k;
+}
+
+void Pinching4M::getState3(Vector& state3Strain, Vector& state3Stress, double kunload)
+{
+	// Calculation of the unloading point
+	double x_1 = hghTstateStrain;			// Strain at unloading point
+	double y_1 = hghTstateStress;			// Stress at unloading point
+	double x_2 = envlpNegStrain(1);			// Strain at yielding point
+	double y_2 = envlpNegDamgdStress(1);	// Stress at yielding point
+	double unloadNegStressFul = kunload / (kunload - kPostYieldNegDamgd) * (kPostYieldNegDamgd * (x_1 - x_2 - y_1 / kunload) + y_2);
+	double unloadNegStress = unloadNegStressFul * uForceN;
+	// Check unloadNegStress
+	if (unloadNegStress > 0) {
+		unloadNegStress = 0.0;
+	}
+	state3Stress(2) = unloadNegStress;
+	state3Strain(2) = hghTstateStrain - (hghTstateStress - state3Stress(2)) / kunload;
+
+	// Calculation of the reloading point
+	double y_4 = lowTstateStress;			// Stress at the end point of state3
+	double y_5 = unloadNegStress;			// Stress at the end point of reloading
+	double reloadNegStress = rForceN * (y_4 - y_5) + y_5;
+	double y_3 = reloadNegStress;			// Stress at the start point of reloading
+	double x_3 = y_3 / kElasticNeg;			// Strain at the start point of reloading
+	double x_4 = lowTstateStrain;			// Strain at the end point of state3
+	double y_6 = reloadNegStress;			// Strain at the end point of reloading
+	double x_6 = (y_6 - y_4) / kElasticNeg + x_4;	// Strain at the end point of reloading
+	double reloadNegStrain = rDispN * (x_6 - x_3) + x_3;
+	state3Strain(1) = reloadNegStrain;
+	state3Stress(1) = reloadNegStress;
+
+	// Check the reloading point
+	if ((abs(state3Strain(0) - state3Strain(1)) < 1e-8) && (abs(state3Stress(0) == state3Stress(1)) < 1e-8)) { // Same point
+		double du = state3Strain(0) - state3Strain(2);
+		double df = state3Stress(0) - state3Stress(2);
+		state4Strain(1) = state4Strain(2) + 0.5 * du;
+		state4Stress(1) = state4Stress(2) + 0.5 * df;
+	}
+
+
+	/*double kmax = (kunload > kElasticNegDamgd) ? kunload : kElasticNegDamgd;
+	if (state3Strain(0) * state3Strain(3) < 0.0) { // Trilinear unload reload path expected, first define point for reloading
+		state3Strain(1) = lowTstateStrain * rDispN;
+
+		if (rForceN - uForceN > 1e-8) { // rForceN > uForceN
+			state3Stress(1) = lowTstateStress * rForceN;
+		}
+		else { // rForceN < uForceN
+			if (TminStrainDmnd < envlpNegStrain(3)) {
+				double st1 = lowTstateStress * uForceN * (1.0 + 1e-6);
+				double st2 = envlpNegDamgdStress(4) * (1.0 + 1e-6);
+				state3Stress(1) = (st1 < st2) ? st1 : st2;
+			}
+			else {
+				double st1 = envlpNegDamgdStress(3) * uForceN * (1.0 + 1e-6);
+				double st2 = envlpNegDamgdStress(4) * (1.0 + 1e-6);
+				state3Stress(1) = (st1 < st2) ? st1 : st2;
+			}
+		}
+
+		// If reload stiffness exceeds unload stiffness, reduce reload stiffness to make it equal to unload stiffness
+		if ((state3Stress(1) - state3Stress(0)) / (state3Strain(1) - state3Strain(0)) > kElasticNegDamgd) {
+			state3Strain(1) = lowTstateStrain + (state3Stress(1) - state3Stress(0)) / kElasticNegDamgd;
+		}
+
+		// Check that reloading point is not behind point 4
+		if (state3Strain(1) > state3Strain(3)) {
+			// Path taken to be a straight line between points 1 and 4
+			double du = state3Strain(3) - state3Strain(0);
+			double df = state3Stress(3) - state3Stress(0);
+			state3Strain(1) = state3Strain(0) + 0.33 * du;
+			state3Strain(2) = state3Strain(0) + 0.67 * du;
+			state3Stress(1) = state3Stress(0) + 0.33 * df;
+			state3Stress(2) = state3Stress(0) + 0.67 * df;
+		}
+		else {
+			if (TminStrainDmnd < envlpNegStrain(3)) {
+				state3Stress(2) = uForceN * envlpNegDamgdStress(4);
+				//state3Stress(2) = uForceN * envlpDamgdStressUnlodFroNegFul(4);
+			}
+			else {
+				state3Stress(2) = uForceN * envlpNegDamgdStress(3);
+				//state3Stress(2) = uForceN * envlpDamgdStressUnlodFroNegFul(3);
+			}
+			state3Strain(2) = hghTstateStrain - (hghTstateStress - state3Stress(2)) / kunload;
+
+			if (state3Strain(2) > state3Strain(3)) {
+				// Point3 should be along a line between 2 and 4
+				double du = state3Strain(3) - state3Strain(1);
+				double df = state3Stress(3) - state3Stress(1);
+				state3Strain(2) = state3Strain(1) + 0.5 * du;
+				state3Stress(2) = state3Stress(1) + 0.5 * df;
+			}
+			else if ((state3Stress(2) - state3Stress(1)) / (state3Strain(2) - state3Strain(1)) > kmax) {
+				// Linear unload-reload path expected
+				double du = state3Strain(3) - state3Strain(0);
+				double df = state3Stress(3) - state3Stress(0);
+				state3Strain(1) = state3Strain(0) + 0.33 * du;
+				state3Strain(2) = state3Strain(0) + 0.67 * du;
+				state3Stress(1) = state3Stress(0) + 0.33 * df;
+				state3Stress(2) = state3Stress(0) + 0.67 * df;
+			}
+			else if ((state3Strain(2) < state3Strain(1)) || ((state3Stress(2) - state3Stress(1)) / (state3Strain(2) - state3Strain(1)) < 0)) {
+				if (state3Strain(2) < 0.0) {
+					// Point 3 should be along a line between 2 and 4
+					double du = state3Strain(3) - state3Strain(1);
+					double df = state3Stress(3) - state3Stress(1);
+					state3Strain(2) = state3Strain(1) + 0.5 * du;
+					state3Stress(2) = state3Stress(1) + 0.5 * df;
+				}
+				else if (state3Strain(1) > 0.0) {
+					// Point 2 should be along a line between 1 and 3
+					double du = state3Strain(2) - state3Strain(0);
+					double df = state3Stress(2) - state3Stress(0);
+					state3Strain(1) = state3Strain(0) + 0.5 * du;
+					state3Stress(1) = state3Stress(0) + 0.5 * df;
+				}
+				else {
+					double avgforce = 0.5 * (state3Stress(2) + state3Stress(1));
+					double dfr = 0.0;
+					if (avgforce < 0.0) {
+						dfr = -avgforce / 100;
+					}
+					else {
+						dfr = avgforce / 100;
+					}
+					double slope12 = (state3Stress(1) - state3Stress(0)) / (state3Strain(1) - state3Strain(0));
+					double slope34 = (state3Stress(3) - state3Stress(2)) / (state3Strain(3) - state3Strain(2));
+					state3Stress(1) = avgforce - dfr;
+					state3Stress(2) = avgforce + dfr;
+					state3Strain(1) = state3Strain(0) + (state3Stress(1) - state3Stress(0)) / slope12;
+					state3Strain(2) = state3Strain(3) - (state3Stress(3) - state3Stress(2)) / slope34;
+				}
+			}
+		}
+
+	}
+	else { // Linear unload reload path is expected
+		double du = state3Strain(3) - state3Strain(0);
+		double df = state3Stress(3) - state3Stress(0);
+		state3Strain(1) = state3Strain(0) + 0.33 * du;
+		state3Strain(2) = state3Strain(0) + 0.67 * du;
+		state3Stress(1) = state3Stress(0) + 0.33 * df;
+		state3Stress(2) = state3Stress(0) + 0.67 * df;
+	}
+	double checkSlope = state3Stress(0) / state3Strain(0);
+	double slope = 0.0;
+	// Final check
+	int i = 0;
+	while (i < 3) {
+		double du = state3Strain(i + 1) - state3Strain(i);
+		double df = state3Stress(i + 1) - state3Stress(i);
+		if (du < 0.0 || df < 0.0) {
+			double du = state3Strain(3) - state3Strain(0);
+			double df = state3Stress(3) - state3Stress(0);
+			state3Strain(1) = state3Strain(0) + 0.33 * du;
+			state3Strain(2) = state3Strain(0) + 0.67 * du;
+			state3Stress(1) = state3Stress(0) + 0.33 * df;
+			state3Stress(2) = state3Stress(0) + 0.67 * df;
+			slope = df / du;
+			i = 3;
+		}
+		if (slope > 1e-8 && slope < checkSlope) {
+			state3Strain(1) = 0.0;
+			state3Stress(1) = 0.0;
+			state3Strain(2) = state3Strain(3) / 2;
+			state3Stress(2) = state3Stress(3) / 2;
+		}
+		i++;
+	}*/
+}
+
+void Pinching4M::getState4(Vector& state4Strain, Vector& state4Stress, double kunload)
+{
+	// Calculation of the unloading point
+	double x_1 = lowTstateStrain;			// Strain at unloading point
+	double y_1 = lowTstateStress;			// Stress at unloading point
+	double x_2 = envlpPosStrain(1);			// Strain at yielding point
+	double y_2 = envlpPosDamgdStress(1);	// Stress at yielding point
+	double unloadPosStressFul = kunload / (kunload - kPostYieldPosDamgd) * (kPostYieldPosDamgd * (x_1 - x_2 - y_1 / kunload) + y_2);
+	double unloadPosStress = unloadPosStressFul * uForceP;
+	// Check unloadNegStress
+	if (unloadPosStress < 0) {
+		unloadPosStress = 0.0;
+	}
+	state4Stress(1) = unloadPosStress;
+	state4Strain(1) = lowTstateStrain + (-lowTstateStress + state4Stress(1)) / kunload;
+
+	// Calculation of the reloading point
+	double y_4 = hghTstateStress;			// Stress at the end point of state4
+	double y_5 = unloadPosStress;			// Stress at the end point of reloading
+	double reloadPosStress = rForceP * (y_4 - y_5) + y_5;
+	double y_3 = reloadPosStress;			// Stress at the start point of reloading
+	double x_3 = y_3 / kElasticPos;			// Strain at the start point of reloading
+	double x_4 = hghTstateStrain;			// Strain at the end point of state4
+	double y_6 = reloadPosStress;			// Strain at the end point of reloading
+	double x_6 = (y_6 - y_4) / kElasticPos + x_4;	// Strain at the end point of reloading
+	double reloadPosStrain = rDispP * (x_6 - x_3) + x_3;
+	state4Strain(2) = reloadPosStrain;
+	state4Stress(2) = reloadPosStress;
+	
+	// Check the reloading point
+	if ((abs(state4Strain(2) - state4Strain(3)) < 1e-8) && (abs(state4Stress(2) - state4Stress(3)) < 1e-8)) { // Same point
+		double du = state4Strain(3) - state4Strain(1);
+		double df = state4Stress(3) - state4Stress(1);
+		state4Strain(2) = state4Strain(1) + 0.5 * du;
+		state4Stress(2) = state4Stress(1) + 0.5 * df;
+	}
+
+	/*
+	double kmax = (kunload > kElasticPosDamgd) ? kunload : kElasticPosDamgd;
+	if (state4Strain(0) * state4Strain(3) < 0.0) {
+		// Trilinear unload reload path epected
+		state4Strain(2) = hghTstateStrain * rDispP;
+		if (uForceP == 0.0) {
+			state4Stress(2) = hghTstateStress * rForceP;
+		}
+		else if (rForceP - uForceP > 1e-8) {
+			state4Stress(2) = hghTstateStress * rForceP;
+		}
+		else {
+			if (TmaxStrainDmnd > envlpPosStrain(3)) {
+				double st1 = hghTstateStress * uForceP * (1.0 + 1e-6);
+				double st2 = envlpPosDamgdStress(4) * (1.0 + 1e-6);
+				state4Stress(2) = (st1 > st2) ? st1 : st2;
+			}
+			else {
+				double st1 = envlpPosDamgdStress(3) * uForceP * (1.0 + 1e-6);
+				double st2 = envlpPosDamgdStress(4) * (1.0 + 1e-6);
+				state4Stress(2) = (st1 > st2) ? st1 : st2;
+			}
+		}
+		// If reload stiffness exceeds unload stiffness, reduce reload stiffness to make it equal to unload stiffness
+		if ((state4Stress(3) - state4Stress(2)) / (state4Strain(3) - state4Strain(2)) > kElasticPosDamgd) {
+			state4Strain(2) = hghTstateStrain - (state4Stress(3) - state4Stress(2)) / kElasticPosDamgd;
+		}
+		// Check that reloading point is not behind point 1
+		if (state4Strain(2) < state4Strain(0)) {
+			// Path taken to be a straight line between points 1 and 4
+			double du = state4Strain(3) - state4Strain(0);
+			double df = state4Stress(3) - state4Stress(0);
+			state4Strain(1) = state4Strain(0) + 0.33 * du;
+			state4Strain(2) = state4Strain(0) + 0.67 * du;
+			state4Stress(1) = state4Stress(0) + 0.33 * df;
+			state4Stress(2) = state4Stress(0) + 0.67 * df;
+		}
+		else {
+			if (TmaxStrainDmnd > envlpPosStrain(3)) {
+				state4Stress(1) = uForceP * envlpPosDamgdStress(4);
+			}
+			else {
+				state4Stress(1) = uForceP * envlpPosDamgdStress(3);
+			}
+			state4Strain(1) = lowTstateStrain + (-lowTstateStress + state4Stress(1)) / kunload;
+			if (state4Strain(1) < state4Strain(0)) {
+				// Point 2 should be along a line between 1 and 3
+				double du = state4Strain(2) - state4Strain(0);
+				double df = state4Stress(2) - state4Stress(0);
+				state4Strain(1) = state4Strain(0) + 0.5 * du;
+				state4Stress(1) = state4Stress(0) + 0.5 * df;
+			}
+			else if ((state4Stress(2) - state4Stress(1)) / (state4Strain(2) - state4Strain(1)) > kmax) {
+				// linear unload-reload path expected
+				double du = state4Strain(3) - state4Strain(0);
+				double df = state4Stress(3) - state4Stress(0);
+				state4Strain(1) = state4Strain(0) + 0.33 * du;
+				state4Strain(2) = state4Strain(0) + 0.67 * du;
+				state4Stress(1) = state4Stress(0) + 0.33 * df;
+				state4Stress(2) = state4Stress(0) + 0.67 * df;
+			}
+			else if ((state4Strain(2) < state4Strain(1)) || ((state4Stress(2) - state4Stress(1)) / (state4Strain(2) - state4Strain(1)) < 0)) {
+				if (state4Strain(1) > 0.0) {
+					// Point 2 should be along a line between 1 and 3
+					double du = state4Strain(2) - state4Strain(0);
+					double df = state4Stress(2) - state4Stress(0);
+					state4Strain(1) = state4Strain(0) + 0.5 * du;
+					state4Stress(1) = state4Stress(0) + 0.5 * df;
+				}
+				else if (state4Strain(2) < 0.0) {
+					// Point 2 should be along a line between 2 and 4
+					double du = state4Strain(3) - state4Strain(1);
+					double df = state4Stress(3) - state4Stress(1);
+					state4Strain(2) = state4Strain(1) + 0.5 * du;
+					state4Stress(2) = state4Stress(1) + 0.5 * df;
+				}
+				else {
+					double avgforce = 0.5 * (state4Stress(2) + state4Stress(1));
+					double dfr = 0.0;
+					if (avgforce < 0.0) {
+						dfr = -avgforce / 100;
+					}
+					else {
+						dfr = avgforce / 100;
+					}
+					double slope12 = (state4Stress(1) - state4Stress(0)) / (state4Strain(1) - state4Strain(0));
+					double slope34 = (state4Stress(3) - state4Stress(2)) / (state4Strain(3) - state4Strain(2));
+					state4Stress(1) = avgforce - dfr;
+					state4Stress(2) = avgforce + dfr;
+					state4Strain(1) = state4Strain(0) + (state4Stress(1) - state4Stress(0)) / slope12;
+					state4Strain(2) = state4Strain(3) - (state4Stress(3) - state4Stress(2)) / slope34;
+				}
+			}
+		}
+	}
+	else {
+		// Linear unload reload path is expected
+		double du = state4Strain(3) - state4Strain(0);
+		double df = state4Stress(3) - state4Stress(0);
+		state4Strain(1) = state4Strain(0) + 0.33 * du;
+		state4Strain(2) = state4Strain(0) + 0.67 * du;
+		state4Stress(1) = state4Stress(0) + 0.33 * df;
+		state4Stress(2) = state4Stress(0) + 0.67 * df;
+	}
+
+	double checkSlope = state4Stress(0) / state4Strain(0);
+	double slope = 0.0;
+
+	// Final check
+	int i = 0;
+	while (i < 3) {
+		double du = state4Strain(i + 1) - state4Strain(i);
+		double df = state4Stress(i + 1) - state4Stress(i);
+		if (du < 0.0 || df < 0.0) {
+			double du = state4Strain(3) - state4Strain(0);
+			double df = state4Stress(3) - state4Stress(0);
+			state4Strain(1) = state4Strain(0) + 0.33 * du;
+			state4Strain(2) = state4Strain(0) + 0.67 * du;
+			state4Stress(1) = state4Stress(0) + 0.33 * df;
+			state4Stress(2) = state4Stress(0) + 0.67 * df;
+			slope = df / du;
+			i = 3;
+		}
+		if (slope > 1e-8 && slope < checkSlope) {
+			state4Strain(1) = 0.0;
+			state4Stress(1) = 0.0;
+			state4Strain(2) = state4Strain(3) / 2;
+			state4Stress(2) = state4Stress(3) / 2;
+		}
+		i++;
+	}*/
+}
+
+
+double Pinching4M::Envlp3Tangent(Vector s3Strain, Vector s3Stress, double u)
+{
+	double k = 0.0;
+	int i = 0;
+	while ((k == 0.0 || i <= 2) && (i <= 2))
+	{
+		if (u >= s3Strain(i)) {
+			k = (s3Stress(i + 1) - s3Stress(i)) / (s3Strain(i + 1) - s3Strain(i));
+		}
+		i++;
+	}
+	//if (k == 0.0) {
+	//	if (u < s3Strain(0)) {
+	//		i = 0;
+	//	}
+	//	else {
+	//		i = 2;
+	//	}
+	//	k = (s3Stress(i + 1) - s3Stress(i)) / (s3Strain(i + 1) - s3Strain(i));
+	//}
+	return k;
+}
+
+double Pinching4M::Envlp3Stress(Vector s3Strain, Vector s3Stress, double u)
+{
+	double k = 0.0;
+	int i = 0;
+	double f = 0.0;
+	while ((k == 0.0 || i <= 2) && (i <= 2))
+	{
+		if (u >= s3Strain(i)) {
+			k = (s3Stress(i + 1) - s3Stress(i)) / (s3Strain(i + 1) - s3Strain(i));
+			f = s3Stress(i) + (u - s3Strain(i)) * k;
+		}
+		i++;
+	}
+	//if (k == 0.0) {
+	//	if (u < s3Strain(0)) {
+	//		i = 0;
+	//	}
+	//	else {
+	//		i = 2;
+	//	}
+	//	k = (s3Stress(i + 1) - s3Stress(i)) / (s3Strain(i + 1) - s3Strain(i));
+	//	f = s3Stress(i) + (u - s3Strain(i)) * k;
+	//}
+	return f;
+}
+
+double Pinching4M::Envlp4Tangent(Vector s4Strain, Vector s4Stress, double u)
+{
+	double k = 0.0;
+	int i = 0;
+	while ((k == 0.0 || i <= 2) && (i <= 2))
+	{
+		if (u >= s4Strain(i)) {
+			k = (s4Stress(i + 1) - s4Stress(i)) / (s4Strain(i + 1) - s4Strain(i));
+		}
+		i++;
+	}
+	//if (k == 0.0) {
+	//	if (u < s4Strain(0)) {
+	//		i = 0;
+	//	}
+	//	else {
+	//		i = 2;
+	//	}
+	//	k = (s4Stress(i + 1) - s4Stress(i)) / (s4Strain(i + 1) - s4Strain(i));
+	//}
+	return k;
+}
+
+double Pinching4M::Envlp4Stress(Vector s4Strain, Vector s4Stress, double u)
+{
+	double k = 0.0;
+	int i = 0;
+	double f = 0.0;
+	while ((k == 0.0 || i <= 2) && (i <= 2))
+	{
+		if (u >= s4Strain(i)) {
+			k = (s4Stress(i + 1) - s4Stress(i)) / (s4Strain(i + 1) - s4Strain(i));
+			f = s4Stress(i) + (u - s4Strain(i)) * k;
+		}
+		i++;
+	}
+	//if (k == 0.0) {
+	//	if (u < s4Strain(0)) {
+	//		i = 0;
+	//	}
+	//	else {
+	//		i = 2;
+	//	}
+	//	k = (s4Stress(i + 1) - s4Stress(i)) / (s4Strain(i + 1) - s4Strain(i));
+	//	f = s4Stress(i) + (u - s4Strain(i)) * k;
+	//}
+	return f;
 }
 
 
 
+void Pinching4M::updateDmg(double strain, double dstrain)
+{
+	double tes = 0.0;
+	double umaxAbs = (TmaxStrainDmnd > -TminStrainDmnd) ? TmaxStrainDmnd : -TminStrainDmnd; // Maximum historic deformation demand
+	double uultAbs = (envlpPosStrain(4) > -envlpNegStrain(4)) ? envlpPosStrain(4) : -envlpNegStrain(4); // Positive / negative deformations that define failure
+	TnCycle = CnCycle + fabs(dstrain) / (4 * umaxAbs);
+	if ((strain < uultAbs && strain >-uultAbs) && Tenergy < energyCapacity) // Under the range of damage
+	{
+		TgammaK = gammaK1 * pow((umaxAbs / uultAbs), gammaK3);
+		TgammaD = gammaD1 * pow((umaxAbs / uultAbs), gammaD3);
+		TgammaF = gammaF1 * pow((umaxAbs / uultAbs), gammaF3);
 
+		if (Tenergy > elasticStrainEnergy && DmgCyc == 0) {
+			tes = ((Tenergy - elasticStrainEnergy) / energyCapacity);
+			TgammaK = TgammaK + gammaK2 * pow(tes, gammaK4);
+			TgammaD = TgammaD + gammaD2 * pow(tes, gammaD4);
+			TgammaF = TgammaF + gammaF2 * pow(tes, gammaF4);
+		}
+		else if (DmgCyc == 1) {
+			TgammaK = TgammaK + gammaK2 * pow(TnCycle, gammaK4);
+			TgammaD = TgammaD + gammaD2 * pow(TnCycle, gammaD4);
+			TgammaF = TgammaF + gammaF2 * pow(TnCycle, gammaF4);
+		}
+		double kminP = (posEnvlpStress(TmaxStrainDmnd) / TmaxStrainDmnd);
+		double kminN = (negEnvlpStress(TminStrainDmnd) / TminStrainDmnd);
+		double kmin = ((kminP / kElasticPos) > (kminN / kElasticNeg)) ? (kminP / kElasticPos) : (kminN / kElasticNeg);
+		double gammaKLimEnv = (0.0 > (1.0 - kmin)) ? 0.0 : (1.0 - kmin);
 
+		double k1 = (TgammaK < gammaKLimit) ? TgammaK : gammaKLimit;
+		TgammaK = (k1 < gammaKLimEnv) ? k1 : gammaKLimEnv;
+		TgammaD = (TgammaD < gammaDLimit) ? TgammaD : gammaDLimit;
+		TgammaF = (TgammaF < gammaFLimit) ? TgammaF : gammaFLimit;
+	}
+	else if (strain < uultAbs && strain > -uultAbs) { // Failure
+		double kminP = (posEnvlpStress(TmaxStrainDmnd) / TmaxStrainDmnd);
+		double kminN = (negEnvlpStress(TminStrainDmnd) / TminStrainDmnd);
+		double kmin = ((kminP / kElasticPos) >= (kminN / kElasticNeg)) ? (kminP / kElasticPos) : (kminN / kElasticNeg);
+		double gammaKLimEnv = (0.0 > (1.0 - kmin)) ? 0.0 : (1.0 - kmin);
 
+		TgammaK = (gammaKLimit < gammaKLimEnv) ? gammaKLimit : gammaKLimEnv;
+		TgammaD = gammaDLimit;
+		TgammaF = gammaFLimit;
+	}
+}
 
+double Pinching4M::getStrain(void)
+{
+	return Tstrain;
+}
 
+double Pinching4M::getStress(void)
+{
+	return Tstress;
+}
 
+double Pinching4M::getTangent(void)
+{
+	return Ttangent;
+}
 
+double Pinching4M::getInitialTangent(void)
+{
+	return envlpPosStress(0) / envlpPosStrain(0);
+}
 
+int Pinching4M::commitState(void) {
+	Cstate = Tstate;
 
+	if (dstrain > 1e-12 || dstrain < -(1e-12)) {
+		CstrainRate = dstrain;
+	}
+	else {
+		CstrainRate = TstrainRate;
+	}
 
+	lowCstateStrain = lowTstateStrain;
+	lowCstateStress = lowTstateStress;
+	hghCstateStrain = hghTstateStrain;
+	hghCstateStress = hghTstateStress;
+	CminStrainDmnd = TminStrainDmnd;
+	CmaxStrainDmnd = TmaxStrainDmnd;
+	Cenergy = Tenergy;
 
+	Cstress = Tstress;
+	Cstrain = Tstrain;
 
+	CgammaK = TgammaK;
+	CgammaD = TgammaD;
+	CgammaF = TgammaF;
 
+	// Define adjusted strength and stiffness parameters
+	kElasticPosDamgd = kElasticPos * (1 - gammaKUsed);
+	kElasticNegDamgd = kElasticNeg * (1 - gammaKUsed);
 
+	uMaxDamgd = TmaxStrainDmnd * (1 + CgammaD);
+	uMinDamgd = TminStrainDmnd * (1 + CgammaD);
 
+	envlpPosDamgdStress = envlpPosStress * (1 - gammaFUsed);
+	envlpNegDamgdStress = envlpNegStress * (1 - gammaFUsed);
 
+	CnCycle = TnCycle; // Number of cycles of loading
 
+#ifdef _G3DEBUG
+	(*fg) << tagMat << " " << CgammaF << " " << CgammaK << " " << CgammaD << endln;
+#endif
+	return 0;
+}
 
+UniaxialMaterial* Pinching4M::getCopy(void)
+{
+	Pinching4M* theCopy = new Pinching4M(this->getTag(),
+		stress1p, strain1p, stress2p, strain2p, stress3p, strain3p, stress4p, strain4p,
+		stress1n, strain1n, stress2n, strain2n, stress3n, strain3n, stress4n, strain4n,
+		rDispP, rForceP, uForceP, rDispN, rForceN, uForceN,
+		gammaK1, gammaK2, gammaK3, gammaK4, gammaKLimit,
+		gammaD1, gammaD2, gammaD3, gammaD4, gammaDLimit,
+		gammaF1, gammaF2, gammaF3, gammaF4, gammaFLimit, gammaE, DmgCyc);
 
+	theCopy->rDispN = rDispN;
+	theCopy->rDispP = rDispP;
+	theCopy->rForceN = rForceN;
+	theCopy->rForceP = rForceP;
+	theCopy->uForceN = uForceN;
+	theCopy->uForceP = uForceP;
 
+	// Trial state variables
+	theCopy->Tstress = Tstress;
+	theCopy->Tstrain = Tstrain;
+	theCopy->Ttangent = Ttangent;
 
+	// Coverged material history parameters
+	theCopy->Cstate = Cstate;
+	theCopy->Cstrain = Cstrain;
+	theCopy->Cstress = Cstress;
+	theCopy->CstrainRate = CstrainRate;
 
+	theCopy->lowCstateStrain = lowCstateStrain;
+	theCopy->lowCstateStress = lowCstateStress;
+	theCopy->hghCstateStrain = hghCstateStrain;
+	theCopy->hghCstateStress = hghCstateStress;
+	theCopy->CminStrainDmnd = CminStrainDmnd;
+	theCopy->CmaxStrainDmnd = CmaxStrainDmnd;
+	theCopy->Cenergy = Cenergy;
+	theCopy->CgammaK = CgammaK;
+	theCopy->CgammaD = CgammaD;
+	theCopy->CgammaF = CgammaF;
+	theCopy->CnCycle = CnCycle;
+	theCopy->gammaKUsed = gammaKUsed;
+	theCopy->gammaFUsed = gammaFUsed;
+	theCopy->DmgCyc = DmgCyc;
 
+	// Trial material history parameters
+	theCopy->Tstate = Tstate;
+	theCopy->dstrain = dstrain;
+	theCopy->lowTstateStrain = lowTstateStrain;
+	theCopy->lowTstateStress = lowTstateStress;
+	theCopy->hghTstateStrain = hghTstateStrain;
+	theCopy->hghTstateStress = hghTstateStress;
+	theCopy->TminStrainDmnd = TminStrainDmnd;
+	theCopy->TmaxStrainDmnd = TmaxStrainDmnd;
+	theCopy->Tenergy = Tenergy;
+	theCopy->TgammaK = TgammaK;
+	theCopy->TgammaD = TgammaD;
+	theCopy->TgammaF = TgammaF;
+	theCopy->TnCycle = TnCycle;
 
+	// Strength and stiffness parameters
+	theCopy->kElasticPos = kElasticPos;
+	theCopy->kElasticNeg = kElasticNeg;
+	theCopy->kElasticPosDamgd = kElasticPosDamgd;
+	theCopy->kElasticNegDamgd = kElasticNegDamgd;
+	theCopy->uMaxDamgd = uMaxDamgd;
+	theCopy->uMinDamgd = uMinDamgd;
 
+	// Yielding stress
+	theCopy->stressyp = strain1p;
+	theCopy->stressyn = strain1n;
 
+	for (int i = 0; i < 6; i++)
+	{
+		theCopy->envlpPosStrain(i) = envlpPosStrain(i);
+		theCopy->envlpPosStress(i) = envlpPosStress(i);
+		theCopy->envlpNegStrain(i) = envlpNegStrain(i);
+		theCopy->envlpNegStress(i) = envlpNegStress(i);
+		theCopy->envlpNegDamgdStress(i) = envlpNegDamgdStress(i);
+		theCopy->envlpPosDamgdStress(i) = envlpPosDamgdStress(i);
+	}
 
+	for (int j = 0; j < 4; j++)
+	{
+		theCopy->state3Strain(j) = state3Strain(j);
+		theCopy->state3Stress(j) = state3Stress(j);
+		theCopy->state4Strain(j) = state4Strain(j);
+		theCopy->state4Stress(j) = state4Stress(j);
+	}
 
+	theCopy->energyCapacity = energyCapacity;
+	theCopy->kunload = kunload;
+	theCopy->elasticStrainEnergy = elasticStrainEnergy;
 
+	return theCopy;
+}
 
+int Pinching4M::sendSelf(int commitTag, Channel& theChannel)
+{
+	return -1;
+}
 
+int Pinching4M::recvSelf(int commitTag, Channel& theChannel, FEM_ObjectBroker& theBroker)
+{
+	return -1;
+}
 
+void Pinching4M::Print(OPS_Stream& s, int flag)
+{
+	s << "Pinching4M, tag: " << this->getTag() << endln;
+	s << "strain: " << Tstrain << endln;
+	s << "stress: " << Tstress << endln;
+	s << "state: " << Tstate << endln;
+}
 
+int Pinching4M::setParameter(const char** argv, int argc, Parameter& param) {
+	// Parameters for backbone control points
+	if (strcmp(argv[0], "f1p") == 0 || strcmp(argv[0], "stress1p") == 0) {
+		param.setValue(stress1p);
+		return param.addObject(1, this);
+	}
+	if (strcmp(argv[0], "d1p") == 0 || strcmp(argv[0], "strain1p") == 0) {
+		param.setValue(strain1p);
+		return param.addObject(2, this);
+	}
+	if (strcmp(argv[0], "f2p") == 0 || strcmp(argv[0], "stress2p") == 0) {
+		param.setValue(stress2p);
+		return param.addObject(3, this);
+	}
+	if (strcmp(argv[0], "d2p") == 0 || strcmp(argv[0], "strain2p") == 0) {
+		param.setValue(strain2p);
+		return param.addObject(4, this);
+	}
+	if (strcmp(argv[0], "f3p") == 0 || strcmp(argv[0], "stress3p") == 0) {
+		param.setValue(stress3p);
+		return param.addObject(5, this);
+	}
+	if (strcmp(argv[0], "d3p") == 0 || strcmp(argv[0], "strain3p") == 0) {
+		param.setValue(strain3p);
+		return param.addObject(6, this);
+	}
+	if (strcmp(argv[0], "f4p") == 0 || strcmp(argv[0], "stress4p") == 0) {
+		param.setValue(stress4p);
+		return param.addObject(7, this);
+	}
+	if (strcmp(argv[0], "d4p") == 0 || strcmp(argv[0], "strain4p") == 0) {
+		param.setValue(strain4p);
+		return param.addObject(8, this);
+	}
+	if (strcmp(argv[0], "f1n") == 0 || strcmp(argv[0], "stress1n") == 0) {
+		param.setValue(stress1n);
+		return param.addObject(9, this);
+	}
+	if (strcmp(argv[0], "d1n") == 0 || strcmp(argv[0], "strain1n") == 0) {
+		param.setValue(strain1n);
+		return param.addObject(10, this);
+	}
+	if (strcmp(argv[0], "f2n") == 0 || strcmp(argv[0], "stress2n") == 0) {
+		param.setValue(stress2n);
+		return param.addObject(11, this);
+	}
+	if (strcmp(argv[0], "d2n") == 0 || strcmp(argv[0], "strain2n") == 0) {
+		param.setValue(strain2n);
+		return param.addObject(12, this);
+	}
+	if (strcmp(argv[0], "f3n") == 0 || strcmp(argv[0], "stress3n") == 0) {
+		param.setValue(stress3n);
+		return param.addObject(13, this);
+	}
+	if (strcmp(argv[0], "d3n") == 0 || strcmp(argv[0], "strain3n") == 0) {
+		param.setValue(strain3n);
+		return param.addObject(14, this);
+	}
+	if (strcmp(argv[0], "f4n") == 0 || strcmp(argv[0], "stress4n") == 0) {
+		param.setValue(stress4n);
+		return param.addObject(15, this);
+	}
+	if (strcmp(argv[0], "d4n") == 0 || strcmp(argv[0], "strain4n") == 0) {
+		param.setValue(strain4n);
+		return param.addObject(16, this);
+	}
 
+	// Parameters for hysteretic rules
+	if (strcmp(argv[0], "rDispP") == 0) {
+		param.setValue(rDispP);
+		return param.addObject(17, this);
+	}
+	if (strcmp(argv[0], "rForceP") == 0) {
+		param.setValue(rForceP);
+		return param.addObject(18, this);
+	}
+	if (strcmp(argv[0], "uForceP") == 0) {
+		param.setValue(uForceP);
+		return param.addObject(19, this);
+	}
+	if (strcmp(argv[0], "rDispN") == 0) {
+		param.setValue(rDispN);
+		return param.addObject(20, this);
+	}
+	if (strcmp(argv[0], "rForceN") == 0) {
+		param.setValue(rForceN);
+		return param.addObject(21, this);
+	}
+	if (strcmp(argv[0], "uForceN") == 0) {
+		param.setValue(uForceN);
+		return param.addObject(22, this);
+	}
 
+	return -1;
+}
 
+int Pinching4M::updateParameter(int parameterID, Information& info)
+{
+	switch (parameterID) {
+	case -1:
+		return -1;
+	case 1:
+		this->stress1p = info.theDouble;
+		break;
+	case 2:
+		this->strain1p = info.theDouble;
+		break;
+	case 3:
+		this->stress2p = info.theDouble;
+		break;
+	case 4:
+		this->strain2p = info.theDouble;
+		break;
+	case 5:
+		this->stress3p = info.theDouble;
+		break;
+	case 6:
+		this->strain3p = info.theDouble;
+		break;
+	case 7:
+		this->stress4p = info.theDouble;
+		break;
+	case 8:
+		this->strain4p = info.theDouble;
+		break;
+	case 9:
+		this->stress1n = info.theDouble;
+		break;
+	case 10:
+		this->strain1n = info.theDouble;
+		break;
+	case 11:
+		this->stress2n = info.theDouble;
+		break;
+	case 12:
+		this->strain2n = info.theDouble;
+		break;
+	case 13:
+		this->stress3n = info.theDouble;
+		break;
+	case 14:
+		this->strain3n = info.theDouble;
+		break;
+	case 15:
+		this->stress4n = info.theDouble;
+		break;
+	case 16:
+		this->strain4n = info.theDouble;
+		break;
+	case 17:
+		this->rDispP = info.theDouble;
+		break;
+	case 18:
+		this->rForceP = info.theDouble;
+		break;
+	case 19:
+		this->uForceP = info.theDouble;
+		break;
+	case 20:
+		this->rDispN = info.theDouble;
+		break;
+	case 21:
+		this->rForceN = info.theDouble;
+		break;
+	case 22:
+		this->uForceN = info.theDouble;
+		break;
+	default:
+		return -1;
+	}
 
+	// Update the envelope
+	this->SetEnvelope();
 
-
-
-
-
-
-
-
-
-//
-//double Pinching4M::getStrain(void)
-//{
-//	return Tstrain;
-//}
-//
-//double Pinching4M::getStress(void)
-//{
-//	return Tstress;
-//}
-//
-//double Pinching4M::getTangent(void)
-//{
-//	return Ttangent;
-//}
-//
-//double Pinching4M::getInitialTangent(void)
-//{
-//	return envlpPosStress(0) / envlpPosStrain(0);
-//}
-//
-//int Pinching4M::commitState(void) {
-//	Cstate = Tstate;
-//
-//	if (dstrain > 1e-12 || dstrain < -(1e-12)) {
-//		CstrainRate = dstrain;
-//	}
-//	else {
-//		CstrainRate = TstrainRate;
-//	}
-//
-//	lowCstateStrain = lowTstateStrain;
-//	lowCstateStress = lowTstateStress;
-//	hghCstateStrain = hghTstateStrain;
-//	hghCstateStress = hghTstateStress;
-//	CminStrainDmnd = TminStrainDmnd;
-//	CmaxStrainDmnd = TmaxStrainDmnd;
-//	Cenergy = Tenergy;
-//
-//	Cstress = Tstress;
-//	Cstrain = Tstrain;
-//
-//	CgammaK = TgammaK;
-//	CgammaD = TgammaD;
-//	CgammaF = TgammaF;
-//
-//	// Define adjusted strength and stiffness parameters
-//	kElasticPosDamgd = kElasticPos * (1 - gammaKUsed);
-//	kElasticNegDamgd = kElasticNeg * (1 - gammaKUsed);
-//
-//	uMaxDamgd = TmaxStrainDmnd * (1 + CgammaD);
-//	uMinDamgd = TminStrainDmnd * (1 + CgammaD);
-//
-//	envlpPosDamgdStress = envlpPosStress * (1 - gammaFUsed);
-//	envlpNegDamgdStress = envlpNegStress * (1 - gammaFUsed);
-//
-//	CnCycle = TnCycle; // Number of cycles of loading
-//
-//#ifdef _G3DEBUG
-//	(*fg) << tagMat << " " << CgammaF << " " << CgammaK << " " << CgammaD << endln;
-//#endif
-//	return 0;
-//}
-//
-//int Pinching4M::revertToLastCommit(void)
-//{
-//	Tstate = Cstate;
-//	TstrainRate = CstrainRate;
-//	lowTstateStrain = lowCstateStrain;
-//	lowTstateStress = lowCstateStress;
-//	hghTstateStrain = hghCstateStrain;
-//	hghTstateStress = hghCstateStress;
-//	TminStrainDmnd = CminStrainDmnd;
-//	TmaxStrainDmnd = CmaxStrainDmnd;
-//	Tenergy = Cenergy;
-//	Tstrain = Cstrain;
-//	Tstress = Cstress;
-//	TgammaD = CgammaD;
-//	TgammaK = CgammaK;
-//	TgammaF = CgammaF;
-//	TnCycle = CnCycle;
-//	return 0;
-//}
-//
-
-//
-//UniaxialMaterial* Pinching4M::getCopy(void)
-//{
-//	Pinching4M* theCopy = new Pinching4M(this->getTag(),
-//		stress1p, strain1p, stress2p, strain2p, stress3p, strain3p, stress4p, strain4p,
-//		stress1n, strain1n, stress2n, strain2n, stress3n, strain3n, stress4n, strain4n,
-//		rDispP, rForceP, uForceP, rDispN, rForceN, uForceN,
-//		gammaK1, gammaK2, gammaK3, gammaK4, gammaKLimit,
-//		gammaD1, gammaD2, gammaD3, gammaD4, gammaDLimit,
-//		gammaF1, gammaF2, gammaF3, gammaF4, gammaFLimit, gammaE, DmgCyc);
-//
-//	theCopy->rDispN = rDispN;
-//	theCopy->rDispP = rDispP;
-//	theCopy->rForceN = rForceN;
-//	theCopy->rForceP = rForceP;
-//	theCopy->uForceN = uForceN;
-//	theCopy->uForceP = uForceP;
-//
-//	// Trial state variables
-//	theCopy->Tstress = Tstress;
-//	theCopy->Tstrain = Tstrain;
-//	theCopy->Ttangent = Ttangent;
-//
-//	// Coverged material history parameters
-//	theCopy->Cstate = Cstate;
-//	theCopy->Cstrain = Cstrain;
-//	theCopy->Cstress = Cstress;
-//	theCopy->CstrainRate = CstrainRate;
-//
-//	theCopy->lowCstateStrain = lowCstateStrain;
-//	theCopy->lowCstateStress = lowCstateStress;
-//	theCopy->hghCstateStrain = hghCstateStrain;
-//	theCopy->hghCstateStress = hghCstateStress;
-//	theCopy->CminStrainDmnd = CminStrainDmnd;
-//	theCopy->CmaxStrainDmnd = CmaxStrainDmnd;
-//	theCopy->Cenergy = Cenergy;
-//	theCopy->CgammaK = CgammaK;
-//	theCopy->CgammaD = CgammaD;
-//	theCopy->CgammaF = CgammaF;
-//	theCopy->CnCycle = CnCycle;
-//	theCopy->gammaKUsed = gammaKUsed;
-//	theCopy->gammaFUsed = gammaFUsed;
-//	theCopy->DmgCyc = DmgCyc;
-//
-//	// Trial material history parameters
-//	theCopy->Tstate = Tstate;
-//	theCopy->dstrain = dstrain;
-//	theCopy->lowTstateStrain = lowTstateStrain;
-//	theCopy->lowTstateStress = lowTstateStress;
-//	theCopy->hghTstateStrain = hghTstateStrain;
-//	theCopy->hghTstateStress = hghTstateStress;
-//	theCopy->TminStrainDmnd = TminStrainDmnd;
-//	theCopy->TmaxStrainDmnd = TmaxStrainDmnd;
-//	theCopy->Tenergy = Tenergy;
-//	theCopy->TgammaK = TgammaK;
-//	theCopy->TgammaD = TgammaD;
-//	theCopy->TgammaF = TgammaF;
-//	theCopy->TnCycle = TnCycle;
-//
-//	// Strength and stiffness parameters
-//	theCopy->kElasticPos = kElasticPos;
-//	theCopy->kElasticNeg = kElasticNeg;
-//	theCopy->kElasticPosDamgd = kElasticPosDamgd;
-//	theCopy->kElasticNegDamgd = kElasticNegDamgd;
-//	theCopy->uMaxDamgd = uMaxDamgd;
-//	theCopy->uMinDamgd = uMinDamgd;
-//
-//	// Yielding stress
-//	theCopy->stressyp = strain1p;
-//	theCopy->stressyn = strain1n;
-//
-//	for (int i = 0; i < 6; i++)
-//	{
-//		theCopy->envlpPosStrain(i) = envlpPosStrain(i);
-//		theCopy->envlpPosStress(i) = envlpPosStress(i);
-//		theCopy->envlpNegStrain(i) = envlpNegStrain(i);
-//		theCopy->envlpNegStress(i) = envlpNegStress(i);
-//		theCopy->envlpNegDamgdStress(i) = envlpNegDamgdStress(i);
-//		theCopy->envlpPosDamgdStress(i) = envlpPosDamgdStress(i);
-//		theCopy->envlpStressUnlodFroNegFul(i) = envlpStressUnlodFroNegFul(i);
-//		theCopy->envlpStressUnlodFroPosFul(i) = envlpStressUnlodFroPosFul(i);
-//		theCopy->envlpDamgdStressUnlodFroNegFul(i) = envlpDamgdStressUnlodFroNegFul(i);
-//		theCopy->envlpDamgdStressUnlodFroPosFul(i) = envlpDamgdStressUnlodFroPosFul(i);
-//	}
-//
-//	for (int j = 0; j < 4; j++)
-//	{
-//		theCopy->state3Strain(j) = state3Strain(j);
-//		theCopy->state3Stress(j) = state3Stress(j);
-//		theCopy->state4Strain(j) = state4Strain(j);
-//		theCopy->state4Stress(j) = state4Stress(j);
-//	}
-//
-//	theCopy->energyCapacity = energyCapacity;
-//	theCopy->kunload = kunload;
-//	theCopy->elasticStrainEnergy = elasticStrainEnergy;
-//
-//	return theCopy;
-//}
-//
-//int Pinching4M::sendSelf(int commitTag, Channel& theChannel)
-//{
-//	return -1;
-//}
-//
-//int Pinching4M::recvSelf(int commitTag, Channel& theChannel, FEM_ObjectBroker& theBroker)
-//{
-//	return -1;
-//}
-//
-//void Pinching4M::Print(OPS_Stream& s, int flag)
-//{
-//	s << "Pinching4M, tag: " << this->getTag() << endln;
-//	s << "strain: " << Tstrain << endln;
-//	s << "stress: " << Tstress << endln;
-//	s << "state: " << Tstate << endln;
-//}
-//
-
-
-//
-//double Pinching4M::posEnvlpStress(double u)
-//{
-//	double k = 0.0;
-//	int i = 0;
-//	double f = 0.0;
-//	while (k == 0.0 && i <= 4) {
-//		if (u <= envlpPosStrain(i + 1)) {
-//			k = (envlpPosDamgdStress(i + 1) - envlpPosDamgdStress(i)) / (envlpPosStrain(i + 1) - envlpPosStrain(i));
-//			f = envlpPosDamgdStress(i) + (u - envlpPosStrain(i)) * k;
-//		}
-//		i++;
-//	}
-//	if (k == 0.0) {
-//		k = (envlpPosDamgdStress(5) - envlpPosDamgdStress(4)) / (envlpPosStrain(5) - envlpPosStrain(4));
-//		f = envlpPosDamgdStress(5) + k * (u - envlpPosStrain(5));
-//	}
-//	return f;
-//}
-//
-//double Pinching4M::posEnvlpTangent(double u)
-//{
-//	double k = 0.0;
-//	int i = 0;
-//	while (k == 0.0 && i <= 4) {
-//		if (u <= envlpPosStrain(i + 1)) {
-//			k = (envlpPosDamgdStress(i + 1) - envlpPosDamgdStress(i)) / (envlpPosStrain(i + 1) - envlpPosStrain(i));
-//		}
-//		i++;
-//	}
-//	if (k == 0.0) {
-//		k = (envlpPosDamgdStress(5) - envlpPosDamgdStress(4)) / (envlpPosStrain(5) - envlpPosStrain(4));
-//	}
-//	return k;
-//}
-//
-//double Pinching4M::negEnvlpStress(double u)
-//{
-//	double k = 0.0;
-//	int i = 0;
-//	double f = 0.0;
-//	while (k == 0.0 && i <= 4) {
-//		if (u >= envlpNegStrain(i + 1)) {
-//			k = (envlpNegDamgdStress(i) - envlpNegDamgdStress(i + 1)) / (envlpNegStrain(i) - envlpNegStrain(i + 1));
-//			f = envlpNegDamgdStress(i + 1) + (u - envlpNegStrain(i + 1)) * k;
-//		}
-//		i++;
-//	}
-//	if (k == 0.0) {
-//		k = (envlpNegDamgdStress(4) - envlpNegDamgdStress(5)) / (envlpNegStrain(4) - envlpNegStrain(5));
-//		f = envlpNegDamgdStress(5) + k * (u - envlpNegStrain(5));
-//	}
-//	return f;
-//}
-//
-//double Pinching4M::negEnvlpTangent(double u)
-//{
-//	double k = 0.0;
-//	int i = 0;
-//	while (k == 0.0 && i <= 4) {
-//		if (u >= envlpNegStrain(i + 1)) {
-//			k = (envlpNegDamgdStress(i) - envlpNegDamgdStress(i + 1)) / (envlpNegStrain(i) - envlpNegStrain(i + 1));
-//		}
-//		i++;
-//	}
-//	if (k == 0.0) {
-//		k = (envlpNegDamgdStress(4) - envlpNegDamgdStress(5)) / (envlpNegStrain(4) - envlpNegStrain(5));
-//	}
-//	return k;
-//}
-//
-//void Pinching4M::getState3(Vector& state3Strain, Vector& state3Stress, double kunload)
-//{
-//	double kmax = (kunload > kElasticNegDamgd) ? kunload : kElasticNegDamgd;
-//	if (state3Strain(0) * state3Strain(3) < 0.0) {
-//		// Trilinear unload reload path expected, first define point for reloading
-//		state3Strain(1) = lowTstateStrain * rDispN;
-//		if (rForceN - uForceN > 1e-8) {
-//			state3Stress(1) = lowTstateStress * rForceN;
-//		}
-//		else {
-//			if (TminStrainDmnd < envlpNegStrain(3)) {
-//				double st1 = lowTstateStress * uForceN * (1.0 + 1e-6);
-//				double st2 = envlpNegDamgdStress(4) * (1.0 + 1e-6);
-//				state3Stress(1) = (st1 < st2) ? st1 : st2;
-//			}
-//			else {
-//				double st1 = envlpNegDamgdStress(3) * uForceN * (1.0 + 1e-6);
-//				double st2 = envlpNegDamgdStress(4) * (1.0 + 1e-6);
-//				state3Stress(1) = (st1 < st2) ? st1 : st2;
-//			}
-//		}
-//
-//		// If reload stiffness exceeds unload stiffness, reduce reload stiffness to make it equal to unload stiffness
-//		if ((state3Stress(1) - state3Stress(0)) / (state3Strain(1) - state3Strain(0)) > kElasticNegDamgd) {
-//			state3Strain(1) = lowTstateStrain + (state3Stress(1) - state3Stress(0)) / kElasticNegDamgd;
-//		}
-//
-//		// Check that reloading point is not behind point 4
-//		if (state3Strain(1) > state3Strain(3)) {
-//			// Path taken to be a straight line between points 1 and 4
-//			double du = state3Strain(3) - state3Strain(0);
-//			double df = state3Stress(3) - state3Stress(0);
-//			state3Strain(1) = state3Strain(0) + 0.33 * du;
-//			state3Strain(2) = state3Strain(0) + 0.67 * du;
-//			state3Stress(1) = state3Stress(0) + 0.33 * df;
-//			state3Stress(2) = state3Stress(0) + 0.67 * df;
-//		}
-//		else {
-//			if (TminStrainDmnd < envlpNegStrain(3)) {
-//				//state3Stress(2) = uForceN * envlpNegDamgdStress(4);
-//				state3Stress(2) = uForceN * envlpDamgdStressUnlodFroNegFul(4);
-//			}
-//			else {
-//				//state3Stress(2) = uForceN * envlpNegDamgdStress(3);
-//				state3Stress(2) = uForceN * envlpDamgdStressUnlodFroNegFul(3);
-//			}
-//			state3Strain(2) = hghTstateStrain - (hghTstateStress - state3Stress(2)) / kunload;
-//
-//			if (state3Strain(2) > state3Strain(3)) {
-//				// Point3 should be along a line between 2 and 4
-//				double du = state3Strain(3) - state3Strain(1);
-//				double df = state3Stress(3) - state3Stress(1);
-//				state3Strain(2) = state3Strain(1) + 0.5 * du;
-//				state3Stress(2) = state3Stress(1) + 0.5 * df;
-//			}
-//			else if ((state3Stress(2) - state3Stress(1)) / (state3Strain(2) - state3Strain(1)) > kmax) {
-//				// Linear unload-reload path expected
-//				double du = state3Strain(3) - state3Strain(0);
-//				double df = state3Stress(3) - state3Stress(0);
-//				state3Strain(1) = state3Strain(0) + 0.33 * du;
-//				state3Strain(2) = state3Strain(0) + 0.67 * du;
-//				state3Stress(1) = state3Stress(0) + 0.33 * df;
-//				state3Stress(2) = state3Stress(0) + 0.67 * df;
-//			}
-//			else if ((state3Strain(2) < state3Strain(1)) || ((state3Stress(2) - state3Stress(1)) / (state3Strain(2) - state3Strain(1)) < 0)) {
-//				if (state3Strain(2) < 0.0) {
-//					// Point 3 should be along a line between 2 and 4
-//					double du = state3Strain(3) - state3Strain(1);
-//					double df = state3Stress(3) - state3Stress(1);
-//					state3Strain(2) = state3Strain(1) + 0.5 * du;
-//					state3Stress(2) = state3Stress(1) + 0.5 * df;
-//				}
-//				else if (state3Strain(1) > 0.0) {
-//					// Point 2 should be along a line between 1 and 3
-//					double du = state3Strain(2) - state3Strain(0);
-//					double df = state3Stress(2) - state3Stress(0);
-//					state3Strain(1) = state3Strain(0) + 0.5 * du;
-//					state3Stress(1) = state3Stress(0) + 0.5 * df;
-//				}
-//				else {
-//					double avgforce = 0.5 * (state3Stress(2) + state3Stress(1));
-//					double dfr = 0.0;
-//					if (avgforce < 0.0) {
-//						dfr = -avgforce / 100;
-//					}
-//					else {
-//						dfr = avgforce / 100;
-//					}
-//					double slope12 = (state3Stress(1) - state3Stress(0)) / (state3Strain(1) - state3Strain(0));
-//					double slope34 = (state3Stress(3) - state3Stress(2)) / (state3Strain(3) - state3Strain(2));
-//					state3Stress(1) = avgforce - dfr;
-//					state3Stress(2) = avgforce + dfr;
-//					state3Strain(1) = state3Strain(0) + (state3Stress(1) - state3Stress(0)) / slope12;
-//					state3Strain(2) = state3Strain(3) - (state3Stress(3) - state3Stress(2)) / slope34;
-//				}
-//				//opserr << "getState3:if3:state3Stress = " << state3Stress << endln;
-//				//opserr << "getState3:if3:state3Strain = " << state3Strain << endln;
-//			}
-//		}
-//
-//	}
-//	else {
-//		// Linear unload reload path is expected
-//		double du = state3Strain(3) - state3Strain(0);
-//		double df = state3Stress(3) - state3Stress(0);
-//		state3Strain(1) = state3Strain(0) + 0.33 * du;
-//		state3Strain(2) = state3Strain(0) + 0.67 * du;
-//		state3Stress(1) = state3Stress(0) + 0.33 * df;
-//		state3Stress(2) = state3Stress(0) + 0.67 * df;
-//	}
-//	double checkSlope = state3Stress(0) / state3Strain(0);
-//	double slope = 0.0;
-//	// Final check
-//	int i = 0;
-//	while (i < 3) {
-//		double du = state3Strain(i + 1) - state3Strain(i);
-//		double df = state3Stress(i + 1) - state3Stress(i);
-//		if (du < 0.0 || df < 0.0) {
-//			double du = state3Strain(3) - state3Strain(0);
-//			double df = state3Stress(3) - state3Stress(0);
-//			state3Strain(1) = state3Strain(0) + 0.33 * du;
-//			state3Strain(2) = state3Strain(0) + 0.67 * du;
-//			state3Stress(1) = state3Stress(0) + 0.33 * df;
-//			state3Stress(2) = state3Stress(0) + 0.67 * df;
-//			slope = df / du;
-//			i = 3;
-//		}
-//		if (slope > 1e-8 && slope < checkSlope) {
-//			state3Strain(1) = 0.0;
-//			state3Stress(1) = 0.0;
-//			state3Strain(2) = state3Strain(3) / 2;
-//			state3Stress(2) = state3Stress(3) / 2;
-//		}
-//		i++;
-//	}
-//}
-//
-//void Pinching4M::getState4(Vector& state4Strain, Vector& state4Stress, double kunload)
-//{
-//	double kmax = (kunload > kElasticPosDamgd) ? kunload : kElasticPosDamgd;
-//	if (state4Strain(0) * state4Strain(3) < 0.0) {
-//		// Trilinear unload reload path epected
-//		state4Strain(2) = hghTstateStrain * rDispP;
-//		if (uForceP == 0.0) {
-//			state4Stress(2) = hghTstateStress * rForceP;
-//		}
-//		else if (rForceP - uForceP > 1e-8) {
-//			state4Stress(2) = hghTstateStress * rForceP;
-//		}
-//		else {
-//			if (TmaxStrainDmnd > envlpPosStrain(3)) {
-//				double st1 = hghTstateStress * uForceP * (1.0 + 1e-6);
-//				double st2 = envlpPosDamgdStress(4) * (1.0 + 1e-6);
-//				state4Stress(2) = (st1 > st2) ? st1 : st2;
-//			}
-//			else {
-//				double st1 = envlpPosDamgdStress(3) * uForceP * (1.0 + 1e-6);
-//				double st2 = envlpPosDamgdStress(4) * (1.0 + 1e-6);
-//				state4Stress(2) = (st1 > st2) ? st1 : st2;
-//			}
-//		}
-//		// If reload stiffness exceeds unload stiffness, reduce reload stiffness to make it equal to unload stiffness
-//		if ((state4Stress(3) - state4Stress(2)) / (state4Strain(3) - state4Strain(2)) > kElasticPosDamgd) {
-//			state4Strain(2) = hghTstateStrain - (state4Stress(3) - state4Stress(2)) / kElasticPosDamgd;
-//		}
-//		// Check that reloading point is not behind point 1
-//		if (state4Strain(2) < state4Strain(0)) {
-//			// Path taken to be a straight line between points 1 and 4
-//			double du = state4Strain(3) - state4Strain(0);
-//			double df = state4Stress(3) - state4Stress(0);
-//			state4Strain(1) = state4Strain(0) + 0.33 * du;
-//			state4Strain(2) = state4Strain(0) + 0.67 * du;
-//			state4Stress(1) = state4Stress(0) + 0.33 * df;
-//			state4Stress(2) = state4Stress(0) + 0.67 * df;
-//		}
-//		else {
-//			if (TmaxStrainDmnd > envlpPosStrain(3)) {
-//				state4Stress(1) = uForceP * envlpPosDamgdStress(4);
-//			}
-//			else {
-//				state4Stress(1) = uForceP * envlpPosDamgdStress(3);
-//			}
-//			state4Strain(1) = lowTstateStrain + (-lowTstateStress + state4Stress(1)) / kunload;
-//			if (state4Strain(1) < state4Strain(0)) {
-//				// Point 2 should be along a line between 1 and 3
-//				double du = state4Strain(2) - state4Strain(0);
-//				double df = state4Stress(2) - state4Stress(0);
-//				state4Strain(1) = state4Strain(0) + 0.5 * du;
-//				state4Stress(1) = state4Stress(0) + 0.5 * df;
-//			}
-//			else if ((state4Stress(2) - state4Stress(1)) / (state4Strain(2) - state4Strain(1)) > kmax) {
-//				// linear unload-reload path expected
-//				double du = state4Strain(3) - state4Strain(0);
-//				double df = state4Stress(3) - state4Stress(0);
-//				state4Strain(1) = state4Strain(0) + 0.33 * du;
-//				state4Strain(2) = state4Strain(0) + 0.67 * du;
-//				state4Stress(1) = state4Stress(0) + 0.33 * df;
-//				state4Stress(2) = state4Stress(0) + 0.67 * df;
-//			}
-//			else if ((state4Strain(2) < state4Strain(1)) || ((state4Stress(2) - state4Stress(1)) / (state4Strain(2) - state4Strain(1)) < 0)) {
-//				if (state4Strain(1) > 0.0) {
-//					// Point 2 should be along a line between 1 and 3
-//					double du = state4Strain(2) - state4Strain(0);
-//					double df = state4Stress(2) - state4Stress(0);
-//					state4Strain(1) = state4Strain(0) + 0.5 * du;
-//					state4Stress(1) = state4Stress(0) + 0.5 * df;
-//				}
-//				else if (state4Strain(2) < 0.0) {
-//					// Point 2 should be along a line between 2 and 4
-//					double du = state4Strain(3) - state4Strain(1);
-//					double df = state4Stress(3) - state4Stress(1);
-//					state4Strain(2) = state4Strain(1) + 0.5 * du;
-//					state4Stress(2) = state4Stress(1) + 0.5 * df;
-//				}
-//				else {
-//					double avgforce = 0.5 * (state4Stress(2) + state4Stress(1));
-//					double dfr = 0.0;
-//					if (avgforce < 0.0) {
-//						dfr = -avgforce / 100;
-//					}
-//					else {
-//						dfr = avgforce / 100;
-//					}
-//					double slope12 = (state4Stress(1) - state4Stress(0)) / (state4Strain(1) - state4Strain(0));
-//					double slope34 = (state4Stress(3) - state4Stress(2)) / (state4Strain(3) - state4Strain(2));
-//					state4Stress(1) = avgforce - dfr;
-//					state4Stress(2) = avgforce + dfr;
-//					state4Strain(1) = state4Strain(0) + (state4Stress(1) - state4Stress(0)) / slope12;
-//					state4Strain(2) = state4Strain(3) - (state4Stress(3) - state4Stress(2)) / slope34;
-//				}
-//			}
-//		}
-//	}
-//	else {
-//		// Linear unload reload path is expected
-//		double du = state4Strain(3) - state4Strain(0);
-//		double df = state4Stress(3) - state4Stress(0);
-//		state4Strain(1) = state4Strain(0) + 0.33 * du;
-//		state4Strain(2) = state4Strain(0) + 0.67 * du;
-//		state4Stress(1) = state4Stress(0) + 0.33 * df;
-//		state4Stress(2) = state4Stress(0) + 0.67 * df;
-//	}
-//
-//	double checkSlope = state4Stress(0) / state4Strain(0);
-//	double slope = 0.0;
-//
-//	// Final check
-//	int i = 0;
-//	while (i < 3) {
-//		double du = state4Strain(i + 1) - state4Strain(i);
-//		double df = state4Stress(i + 1) - state4Stress(i);
-//		if (du < 0.0 || df < 0.0) {
-//			double du = state4Strain(3) - state4Strain(0);
-//			double df = state4Stress(3) - state4Stress(0);
-//			state4Strain(1) = state4Strain(0) + 0.33 * du;
-//			state4Strain(2) = state4Strain(0) + 0.67 * du;
-//			state4Stress(1) = state4Stress(0) + 0.33 * df;
-//			state4Stress(2) = state4Stress(0) + 0.67 * df;
-//			slope = df / du;
-//			i = 3;
-//		}
-//		if (slope > 1e-8 && slope < checkSlope) {
-//			state4Strain(1) = 0.0;
-//			state4Stress(1) = 0.0;
-//			state4Strain(2) = state4Strain(3) / 2;
-//			state4Stress(2) = state4Stress(3) / 2;
-//		}
-//		i++;
-//	}
-//}
-//
-//double Pinching4M::Envlp3Tangent(Vector s3Strain, Vector s3Stress, double u)
-//{
-//	double k = 0.0;
-//	int i = 0;
-//	while ((k == 0.0 || i <= 2) && (i <= 2))
-//	{
-//		if (u >= s3Strain(i)) {
-//			k = (s3Stress(i + 1) - s3Stress(i)) / (s3Strain(i + 1) - s3Strain(i));
-//		}
-//		i++;
-//	}
-//	if (k == 0.0) {
-//		if (u < s3Strain(0)) {
-//			i = 0;
-//		}
-//		else {
-//			i = 2;
-//		}
-//		k = (s3Stress(i + 1) - s3Stress(i)) / (s3Strain(i + 1) - s3Strain(i));
-//	}
-//	return k;
-//}
-//
-//double Pinching4M::Envlp4Tangent(Vector s4Strain, Vector s4Stress, double u)
-//{
-//	double k = 0.0;
-//	int i = 0;
-//	while ((k == 0.0 || i <= 2) && (i <= 2))
-//	{
-//		if (u >= s4Strain(i)) {
-//			k = (s4Stress(i + 1) - s4Stress(i)) / (s4Strain(i + 1) - s4Strain(i));
-//		}
-//		i++;
-//	}
-//	if (k == 0.0) {
-//		if (u < s4Strain(0)) {
-//			i = 0;
-//		}
-//		else {
-//			i = 2;
-//		}
-//		k = (s4Stress(i + 1) - s4Stress(i)) / (s4Strain(i + 1) - s4Strain(i));
-//	}
-//	return k;
-//}
-//
-//double Pinching4M::Envlp3Stress(Vector s3Strain, Vector s3Stress, double u)
-//{
-//	double k = 0.0;
-//	int i = 0;
-//	double f = 0.0;
-//	while ((k == 0.0 || i <= 2) && (i <= 2))
-//	{
-//		if (u >= s3Strain(i)) {
-//			k = (s3Stress(i + 1) - s3Stress(i)) / (s3Strain(i + 1) - s3Strain(i));
-//			f = s3Stress(i) + (u - s3Strain(i)) * k;
-//		}
-//		i++;
-//	}
-//	if (k == 0.0) {
-//		if (u < s3Strain(0)) {
-//			i = 0;
-//		}
-//		else {
-//			i = 2;
-//		}
-//		k = (s3Stress(i + 1) - s3Stress(i)) / (s3Strain(i + 1) - s3Strain(i));
-//		f = s3Stress(i) + (u - s3Strain(i)) * k;
-//	}
-//	return f;
-//}
-//
-//double Pinching4M::Envlp4Stress(Vector s4Strain, Vector s4Stress, double u)
-//{
-//	double k = 0.0;
-//	int i = 0;
-//	double f = 0.0;
-//	while ((k == 0.0 || i <= 2) && (i <= 2))
-//	{
-//		if (u >= s4Strain(i)) {
-//			k = (s4Stress(i + 1) - s4Stress(i)) / (s4Strain(i + 1) - s4Strain(i));
-//			f = s4Stress(i) + (u - s4Strain(i)) * k;
-//		}
-//		i++;
-//	}
-//	if (k == 0.0) {
-//		if (u < s4Strain(0)) {
-//			i = 0;
-//		}
-//		else {
-//			i = 2;
-//		}
-//		k = (s4Stress(i + 1) - s4Stress(i)) / (s4Strain(i + 1) - s4Strain(i));
-//		f = s4Stress(i) + (u - s4Strain(i)) * k;
-//	}
-//	return f;
-//}
-//
-//void Pinching4M::updateDmg(double strain, double dstrain)
-//{
-//	double tes = 0.0;
-//	double umaxAbs = (TmaxStrainDmnd > -TminStrainDmnd) ? TmaxStrainDmnd : -TminStrainDmnd;
-//	double uultAbs = (envlpPosStrain(4) > -envlpNegStrain(4)) ? envlpPosStrain(4) : -envlpNegStrain(4);
-//	TnCycle = CnCycle + fabs(dstrain) / (4 * umaxAbs);
-//	if ((strain < uultAbs && strain >-uultAbs) && Tenergy < energyCapacity)
-//	{
-//		TgammaK = gammaK1 * pow((umaxAbs / uultAbs), gammaK3);
-//		TgammaD = gammaD1 * pow((umaxAbs / uultAbs), gammaD3);
-//		TgammaF = gammaF1 * pow((umaxAbs / uultAbs), gammaF3);
-//
-//		if (Tenergy > elasticStrainEnergy && DmgCyc == 0) {
-//			tes = ((Tenergy - elasticStrainEnergy) / energyCapacity);
-//			TgammaK = TgammaK + gammaK2 * pow(tes, gammaK4);
-//			TgammaD = TgammaD + gammaD2 * pow(tes, gammaD4);
-//			TgammaF = TgammaF + gammaF2 * pow(tes, gammaF4);
-//		}
-//		else if (DmgCyc == 1) {
-//			TgammaK = TgammaK + gammaK2 * pow(TnCycle, gammaK4);
-//			TgammaD = TgammaD + gammaD2 * pow(TnCycle, gammaD4);
-//			TgammaF = TgammaF + gammaF2 * pow(TnCycle, gammaF4);
-//		}
-//		double kminP = (posEnvlpStress(TmaxStrainDmnd) / TmaxStrainDmnd);
-//		double kminN = (negEnvlpStress(TminStrainDmnd) / TminStrainDmnd);
-//		double kmin = ((kminP / kElasticPos) > (kminN / kElasticNeg)) ? (kminP / kElasticPos) : (kminN / kElasticNeg);
-//		double gammaKLimEnv = (0.0 > (1.0 - kmin)) ? 0.0 : (1.0 - kmin);
-//
-//		double k1 = (TgammaK < gammaKLimit) ? TgammaK : gammaKLimit;
-//		TgammaK = (k1 < gammaKLimEnv) ? k1 : gammaKLimEnv;
-//		TgammaD = (TgammaD < gammaDLimit) ? TgammaD : gammaDLimit;
-//		TgammaF = (TgammaF < gammaFLimit) ? TgammaF : gammaFLimit;
-//	}
-//	else if (strain < uultAbs && strain > -uultAbs) {
-//		double kminP = (posEnvlpStress(TmaxStrainDmnd) / TmaxStrainDmnd);
-//		double kminN = (negEnvlpStress(TminStrainDmnd) / TminStrainDmnd);
-//		double kmin = ((kminP / kElasticPos) >= (kminN / kElasticNeg)) ? (kminP / kElasticPos) : (kminN / kElasticNeg);
-//		double gammaKLimEnv = (0.0 > (1.0 - kmin)) ? 0.0 : (1.0 - kmin);
-//
-//		TgammaK = (gammaKLimit < gammaKLimEnv) ? gammaKLimit : gammaKLimEnv;
-//		TgammaD = gammaDLimit;
-//		TgammaF = gammaFLimit;
-//	}
-//}
-//
-//int Pinching4M::setParameter(const char** argv, int argc, Parameter& param) {
-//	// Parameters for backbone control points
-//	if (strcmp(argv[0], "f1p") == 0 || strcmp(argv[0], "stress1p") == 0) {
-//		param.setValue(stress1p);
-//		return param.addObject(1, this);
-//	}
-//	if (strcmp(argv[0], "d1p") == 0 || strcmp(argv[0], "strain1p") == 0) {
-//		param.setValue(strain1p);
-//		return param.addObject(2, this);
-//	}
-//	if (strcmp(argv[0], "f2p") == 0 || strcmp(argv[0], "stress2p") == 0) {
-//		param.setValue(stress2p);
-//		return param.addObject(3, this);
-//	}
-//	if (strcmp(argv[0], "d2p") == 0 || strcmp(argv[0], "strain2p") == 0) {
-//		param.setValue(strain2p);
-//		return param.addObject(4, this);
-//	}
-//	if (strcmp(argv[0], "f3p") == 0 || strcmp(argv[0], "stress3p") == 0) {
-//		param.setValue(stress3p);
-//		return param.addObject(5, this);
-//	}
-//	if (strcmp(argv[0], "d3p") == 0 || strcmp(argv[0], "strain3p") == 0) {
-//		param.setValue(strain3p);
-//		return param.addObject(6, this);
-//	}
-//	if (strcmp(argv[0], "f4p") == 0 || strcmp(argv[0], "stress4p") == 0) {
-//		param.setValue(stress4p);
-//		return param.addObject(7, this);
-//	}
-//	if (strcmp(argv[0], "d4p") == 0 || strcmp(argv[0], "strain4p") == 0) {
-//		param.setValue(strain4p);
-//		return param.addObject(8, this);
-//	}
-//	if (strcmp(argv[0], "f1n") == 0 || strcmp(argv[0], "stress1n") == 0) {
-//		param.setValue(stress1n);
-//		return param.addObject(9, this);
-//	}
-//	if (strcmp(argv[0], "d1n") == 0 || strcmp(argv[0], "strain1n") == 0) {
-//		param.setValue(strain1n);
-//		return param.addObject(10, this);
-//	}
-//	if (strcmp(argv[0], "f2n") == 0 || strcmp(argv[0], "stress2n") == 0) {
-//		param.setValue(stress2n);
-//		return param.addObject(11, this);
-//	}
-//	if (strcmp(argv[0], "d2n") == 0 || strcmp(argv[0], "strain2n") == 0) {
-//		param.setValue(strain2n);
-//		return param.addObject(12, this);
-//	}
-//	if (strcmp(argv[0], "f3n") == 0 || strcmp(argv[0], "stress3n") == 0) {
-//		param.setValue(stress3n);
-//		return param.addObject(13, this);
-//	}
-//	if (strcmp(argv[0], "d3n") == 0 || strcmp(argv[0], "strain3n") == 0) {
-//		param.setValue(strain3n);
-//		return param.addObject(14, this);
-//	}
-//	if (strcmp(argv[0], "f4n") == 0 || strcmp(argv[0], "stress4n") == 0) {
-//		param.setValue(stress4n);
-//		return param.addObject(15, this);
-//	}
-//	if (strcmp(argv[0], "d4n") == 0 || strcmp(argv[0], "strain4n") == 0) {
-//		param.setValue(strain4n);
-//		return param.addObject(16, this);
-//	}
-//
-//	// Parameters for hysteretic rules
-//	if (strcmp(argv[0], "rDispP") == 0) {
-//		param.setValue(rDispP);
-//		return param.addObject(17, this);
-//	}
-//	if (strcmp(argv[0], "rForceP") == 0) {
-//		param.setValue(rForceP);
-//		return param.addObject(18, this);
-//	}
-//	if (strcmp(argv[0], "uForceP") == 0) {
-//		param.setValue(uForceP);
-//		return param.addObject(19, this);
-//	}
-//	if (strcmp(argv[0], "rDispN") == 0) {
-//		param.setValue(rDispN);
-//		return param.addObject(20, this);
-//	}
-//	if (strcmp(argv[0], "rForceN") == 0) {
-//		param.setValue(rForceN);
-//		return param.addObject(21, this);
-//	}
-//	if (strcmp(argv[0], "uForceN") == 0) {
-//		param.setValue(uForceN);
-//		return param.addObject(22, this);
-//	}
-//
-//	return -1;
-//}
-//
-//int Pinching4M::updateParameter(int parameterID, Information& info)
-//{
-//	switch (parameterID) {
-//	case -1:
-//		return -1;
-//	case 1:
-//		this->stress1p = info.theDouble;
-//		break;
-//	case 2:
-//		this->strain1p = info.theDouble;
-//		break;
-//	case 3:
-//		this->stress2p = info.theDouble;
-//		break;
-//	case 4:
-//		this->strain2p = info.theDouble;
-//		break;
-//	case 5:
-//		this->stress3p = info.theDouble;
-//		break;
-//	case 6:
-//		this->strain3p = info.theDouble;
-//		break;
-//	case 7:
-//		this->stress4p = info.theDouble;
-//		break;
-//	case 8:
-//		this->strain4p = info.theDouble;
-//		break;
-//	case 9:
-//		this->stress1n = info.theDouble;
-//		break;
-//	case 10:
-//		this->strain1n = info.theDouble;
-//		break;
-//	case 11:
-//		this->stress2n = info.theDouble;
-//		break;
-//	case 12:
-//		this->strain2n = info.theDouble;
-//		break;
-//	case 13:
-//		this->stress3n = info.theDouble;
-//		break;
-//	case 14:
-//		this->strain3n = info.theDouble;
-//		break;
-//	case 15:
-//		this->stress4n = info.theDouble;
-//		break;
-//	case 16:
-//		this->strain4n = info.theDouble;
-//		break;
-//	case 17:
-//		this->rDispP = info.theDouble;
-//		break;
-//	case 18:
-//		this->rForceP = info.theDouble;
-//		break;
-//	case 19:
-//		this->uForceP = info.theDouble;
-//		break;
-//	case 20:
-//		this->rDispN = info.theDouble;
-//		break;
-//	case 21:
-//		this->rForceN = info.theDouble;
-//		break;
-//	case 22:
-//		this->uForceN = info.theDouble;
-//		break;
-//	default:
-//		return -1;
-//	}
-//
-//	// Update the envelope?
-//	this->SetEnvelope();
-//
-//	return 0;
-//}
+	return 0;
+}
