@@ -681,81 +681,89 @@ void Pinching4M::getstate(double u, double du) // Trail strain and delta strain
 double Pinching4M::posEnvlpStress(double u)
 {
 	double k = 0.0;
+	bool isGet = false;
 	int i = 0;
 	double f = 0.0;
-	while (k == 0.0 && i <= 4) {
+	while (k == 0.0 && i <= 4 && isGet == false) {
 		if (u <= envlpPosStrain(i + 1)) { // Look for current position
 			k = (envlpPosDamgdStress(i + 1) - envlpPosDamgdStress(i)) / (envlpPosStrain(i + 1) - envlpPosStrain(i));
 			f = envlpPosDamgdStress(i) + (u - envlpPosStrain(i)) * k;
+			isGet = true;
 		}
 		i++;
 	}
-	if (k == 0.0) {
-		k = (envlpPosDamgdStress(5) - envlpPosDamgdStress(4)) / (envlpPosStrain(5) - envlpPosStrain(4));
-		f = envlpPosDamgdStress(5) + k * (u - envlpPosStrain(5));
-	}
+	//if (k == 0.0) {
+	//	k = (envlpPosDamgdStress(5) - envlpPosDamgdStress(4)) / (envlpPosStrain(5) - envlpPosStrain(4));
+	//	f = envlpPosDamgdStress(5) + k * (u - envlpPosStrain(5));
+	//}
 	return f;
 }
 
 double Pinching4M::posEnvlpTangent(double u)
 {
 	double k = 0.0;
+	bool isGet = false;
 	int i = 0;
-	while (k == 0.0 && i <= 4) {
+	while (k == 0.0 && i <= 4 && isGet == false) {
 		if (u <= envlpPosStrain(i + 1)) {
 			k = (envlpPosDamgdStress(i + 1) - envlpPosDamgdStress(i)) / (envlpPosStrain(i + 1) - envlpPosStrain(i));
+			isGet = true;
 		}
 		i++;
 	}
-	if (k == 0.0) {
-		k = (envlpPosDamgdStress(5) - envlpPosDamgdStress(4)) / (envlpPosStrain(5) - envlpPosStrain(4));
-	}
+	//if (k == 0.0) {
+	//	k = (envlpPosDamgdStress(5) - envlpPosDamgdStress(4)) / (envlpPosStrain(5) - envlpPosStrain(4));
+	//}
 	return k;
 }
 
 double Pinching4M::negEnvlpStress(double u)
 {
 	double k = 0.0;
+	bool isGet = false;
 	int i = 0;
 	double f = 0.0;
-	while (k == 0.0 && i <= 4) {
+	while (k == 0.0 && i <= 4 && isGet == false) {
 		if (u >= envlpNegStrain(i + 1)) { // Look for current position
 			k = (envlpNegDamgdStress(i) - envlpNegDamgdStress(i + 1)) / (envlpNegStrain(i) - envlpNegStrain(i + 1));
 			f = envlpNegDamgdStress(i + 1) + (u - envlpNegStrain(i + 1)) * k;
+			isGet = true;
 		}
 		i++;
 	}
-	if (k == 0.0) {
-		k = (envlpNegDamgdStress(4) - envlpNegDamgdStress(5)) / (envlpNegStrain(4) - envlpNegStrain(5));
-		f = envlpNegDamgdStress(5) + k * (u - envlpNegStrain(5));
-	}
+	//if (k == 0.0) {
+	//	k = (envlpNegDamgdStress(4) - envlpNegDamgdStress(5)) / (envlpNegStrain(4) - envlpNegStrain(5));
+	//	f = envlpNegDamgdStress(5) + k * (u - envlpNegStrain(5));
+	//}
 	return f;
 }
 
 double Pinching4M::negEnvlpTangent(double u)
 {
 	double k = 0.0;
+	bool isGet = false;
 	int i = 0;
-	while (k == 0.0 && i <= 4) {
+	while (k == 0.0 && i <= 4 && isGet == false) {
 		if (u >= envlpNegStrain(i + 1)) {
 			k = (envlpNegDamgdStress(i) - envlpNegDamgdStress(i + 1)) / (envlpNegStrain(i) - envlpNegStrain(i + 1));
+			isGet = true;
 		}
 		i++;
 	}
-	if (k == 0.0) {
+	/*if (k == 0.0) {
 		k = (envlpNegDamgdStress(4) - envlpNegDamgdStress(5)) / (envlpNegStrain(4) - envlpNegStrain(5));
-	}
+	}*/
 	return k;
 }
 
 void Pinching4M::getState3(Vector& state3Strain, Vector& state3Stress, double kunload)
 {
 	// Calculation of the unloading point
-	double x_1 = hghTstateStrain;			// Strain at unloading point
-	double y_1 = hghTstateStress;			// Stress at unloading point
-	double x_2 = envlpNegStrain(1);			// Strain at yielding point
-	double y_2 = envlpNegDamgdStress(1);	// Stress at yielding point
-	double unloadNegStressFul = kunload / (kunload - kPostYieldNegDamgd) * (kPostYieldNegDamgd * (x_1 - x_2 - y_1 / kunload) + y_2);
+	double strainNegUnlStart = hghTstateStrain;         // Strain at unloading point
+	double stressNegUnlStart = hghTstateStress;         // Stress at unloading point
+	double strainNegY = envlpNegStrain(1);          // Strain at yielding point
+	double stressNegY = envlpNegDamgdStress(1); // Stress at yielding point
+	double unloadNegStressFul = kunload / (kunload - kPostYieldNegDamgd) * (kPostYieldNegDamgd * (strainNegUnlStart - strainNegY - stressNegUnlStart / kunload) + stressNegY);
 	double unloadNegStress = unloadNegStressFul * uForceN;
 	// Check unloadNegStress
 	if (unloadNegStress > 0) {
@@ -765,15 +773,19 @@ void Pinching4M::getState3(Vector& state3Strain, Vector& state3Stress, double ku
 	state3Strain(2) = hghTstateStrain - (hghTstateStress - state3Stress(2)) / kunload;
 
 	// Calculation of the reloading point
-	double y_4 = lowTstateStress;			// Stress at the end point of state3
-	double y_5 = unloadNegStress;			// Stress at the end point of reloading
-	double reloadNegStress = rForceN * (y_4 - y_5) + y_5;
-	double y_3 = reloadNegStress;			// Stress at the start point of reloading
-	double x_3 = y_3 / kElasticNeg;			// Strain at the start point of reloading
-	double x_4 = lowTstateStrain;			// Strain at the end point of state3
-	double y_6 = reloadNegStress;			// Strain at the end point of reloading
-	double x_6 = (y_6 - y_4) / kElasticNeg + x_4;	// Strain at the end point of reloading
-	double reloadNegStrain = rDispN * (x_6 - x_3) + x_3;
+	double strainS3Max = lowTstateStrain; // Maximum point at negative pinching branch
+	double stressS3Max = lowTstateStress;
+	double stressS3RelMin = unloadNegStress; // Minimum point for reloading
+	double strainS3RelMin = stressS3RelMin / (stressNegY / strainNegY);
+	double stressS3RelMax = unloadNegStress; // Maximum point for reloading
+	double strainS3RelMax = (stressS3RelMax - stressS3Max) / kunload + strainS3Max;
+	double reloadNegStress = rForceN * (stressS3Max - unloadNegStress) + unloadNegStress; // Stress at the reloading point
+	double reloadNegStrainMin = (reloadNegStress - stressS3RelMin) / (stressNegY / strainNegY) + strainS3RelMin; // Strain for the start point of reloading point
+	double reloadNegStrainMax = (reloadNegStress - stressS3RelMax) / kunload + strainS3RelMax; // Strain for the end point of reloading
+	/*if (reloadNegStress < stressNegY) {
+		reloadNegStrainMin = (reloadNegStress - stressNegY) / kPostYieldNegDamgd + strainNegY;
+	}*/
+	double reloadNegStrain = rDispN * (reloadNegStrainMax - reloadNegStrainMin) + reloadNegStrainMin;
 	state3Strain(1) = reloadNegStrain;
 	state3Stress(1) = reloadNegStress;
 
@@ -921,11 +933,11 @@ void Pinching4M::getState3(Vector& state3Strain, Vector& state3Stress, double ku
 void Pinching4M::getState4(Vector& state4Strain, Vector& state4Stress, double kunload)
 {
 	// Calculation of the unloading point
-	double x_1 = lowTstateStrain;			// Strain at unloading point
-	double y_1 = lowTstateStress;			// Stress at unloading point
-	double x_2 = envlpPosStrain(1);			// Strain at yielding point
-	double y_2 = envlpPosDamgdStress(1);	// Stress at yielding point
-	double unloadPosStressFul = kunload / (kunload - kPostYieldPosDamgd) * (kPostYieldPosDamgd * (x_1 - x_2 - y_1 / kunload) + y_2);
+	double strainPosUnlStart = lowTstateStrain;         // Strain at unloading point
+	double stressPosUnlStart = lowTstateStress;         // Stress at unloading point
+	double strainPosY = envlpPosStrain(1);          // Strain at yielding point
+	double StressPosY = envlpPosDamgdStress(1); // Stress at yielding point
+	double unloadPosStressFul = kunload / (kunload - kPostYieldPosDamgd) * (kPostYieldPosDamgd * (strainPosUnlStart - strainPosY - stressPosUnlStart / kunload) + StressPosY);
 	double unloadPosStress = unloadPosStressFul * uForceP;
 	// Check unloadNegStress
 	if (unloadPosStress < 0) {
@@ -935,15 +947,19 @@ void Pinching4M::getState4(Vector& state4Strain, Vector& state4Stress, double ku
 	state4Strain(1) = lowTstateStrain + (-lowTstateStress + state4Stress(1)) / kunload;
 
 	// Calculation of the reloading point
-	double y_4 = hghTstateStress;			// Stress at the end point of state4
-	double y_5 = unloadPosStress;			// Stress at the end point of reloading
-	double reloadPosStress = rForceP * (y_4 - y_5) + y_5;
-	double y_3 = reloadPosStress;			// Stress at the start point of reloading
-	double x_3 = y_3 / kElasticPos;			// Strain at the start point of reloading
-	double x_4 = hghTstateStrain;			// Strain at the end point of state4
-	double y_6 = reloadPosStress;			// Strain at the end point of reloading
-	double x_6 = (y_6 - y_4) / kElasticPos + x_4;	// Strain at the end point of reloading
-	double reloadPosStrain = rDispP * (x_6 - x_3) + x_3;
+	double strainS4Max = hghTstateStrain; // Maximum point at positive pinching branch
+	double stressS4Max = hghTstateStress;
+	double stressS4RelMin = unloadPosStress; // Minimum point for reloading
+	double strainS4RelMin = stressS4RelMin / (StressPosY / strainPosY);
+	double stressS4RelMax = unloadPosStress; // Maximum point for reloading
+	double strainS4RelMax = (stressS4RelMax - stressS4Max) / kunload + strainS4Max;
+	double reloadPosStress = rForceN * (stressS4Max - unloadPosStress) + unloadPosStress; // Stress at the reloading point
+	double reloadPosStrainMin = (reloadPosStress - stressS4RelMin) / (StressPosY / strainPosY) + strainS4RelMin;
+	double reloadPosStrainMax = (reloadPosStress - stressS4RelMax) / kunload + strainS4RelMax;
+	/*if (reloadPosStress > StressPosY) {
+		reloadPosStrainMin = (reloadPosStress - StressPosY) / kPostYieldPosDamgd + strainPosY;
+	}*/
+	double reloadPosStrain = rDispN * (reloadPosStrainMax - reloadPosStrainMin) + reloadPosStrainMin;
 	state4Strain(2) = reloadPosStrain;
 	state4Stress(2) = reloadPosStress;
 	
